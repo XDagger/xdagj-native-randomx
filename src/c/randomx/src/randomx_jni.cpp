@@ -25,7 +25,7 @@ static CTHR_THREAD_RTYPE rx_seedthread(void *arg) {
 extern "C"
 JNIEXPORT jlong JNICALL Java_io_xdag_crypto_jni_RandomX_allocCache(
         JNIEnv *env,
-        jobject *obj) {
+        jclass obj) {
     randomx_flags flags = randomx_get_flags();
     randomx_cache* cache=randomx_alloc_cache(flags | RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_FULL_MEM);
 //    std::cout << "alloc randomx cache " << cache << std::endl;
@@ -35,23 +35,27 @@ JNIEXPORT jlong JNICALL Java_io_xdag_crypto_jni_RandomX_allocCache(
 extern "C"
 JNIEXPORT void JNICALL Java_io_xdag_crypto_jni_RandomX_initCache(
         JNIEnv *env,
-        jobject *obj,
+        jclass obj,
         jlong jcache,
         jbyteArray jkey,
         jint jlen) {
 
     char key[MAX_RX_KEY_LEN] = {0};
     env->GetByteArrayRegion(jkey,0,jlen,(jbyte*)key);
+    std::cout << "jlen:" << jlen << std::endl;
+    std::cout << "key:" << key << std::endl;
     randomx_cache* cache=(randomx_cache*)jcache;
+    std::cout << "3333" << std::endl;
+    std::cout << "init randomx cache " << cache << " with seed " << key << std::endl;
     randomx_init_cache(cache,key,jlen);
-//    std::cout << "init randomx cache " << cache << " with seed " << key << std::endl;
+    std::cout << "init randomx cache " << cache << " with seed " << key << std::endl;
     return;
 }
 
 extern "C"
 JNIEXPORT void JNICALL Java_io_xdag_crypto_jni_RandomX_releaseCache(
         JNIEnv *env,
-        jobject *obj,
+        jclass obj,
         jlong jcache) {
     randomx_cache* cache=(randomx_cache*)jcache;
     randomx_release_cache(cache);
@@ -62,7 +66,7 @@ JNIEXPORT void JNICALL Java_io_xdag_crypto_jni_RandomX_releaseCache(
 extern "C"
 JNIEXPORT jlong JNICALL Java_io_xdag_crypto_jni_RandomX_allocDataSet(
         JNIEnv *env,
-        jobject *obj) {
+        jclass obj) {
     randomx_flags flags = randomx_get_flags();
     randomx_dataset* dataset=randomx_alloc_dataset(flags | RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_FULL_MEM);
 //    std::cout << "alloc randomx dataset " << dataset << std::endl;
@@ -72,7 +76,7 @@ JNIEXPORT jlong JNICALL Java_io_xdag_crypto_jni_RandomX_allocDataSet(
 extern "C"
 JNIEXPORT void JNICALL Java_io_xdag_crypto_jni_RandomX_initDataSet(
         JNIEnv *env,
-        jobject *obj,
+        jclass obj,
         jlong jcache,
         jlong jdataset,
         jint jminers) {
@@ -137,7 +141,7 @@ JNIEXPORT void JNICALL Java_io_xdag_crypto_jni_RandomX_initDataSet(
 extern "C"
 JNIEXPORT void JNICALL Java_io_xdag_crypto_jni_RandomX_releaseDataSet(
         JNIEnv *env,
-        jobject *obj,
+        jclass obj,
         jlong jdataset) {
 
     randomx_dataset* rx_dataset=(randomx_dataset*)jdataset;
@@ -148,7 +152,7 @@ JNIEXPORT void JNICALL Java_io_xdag_crypto_jni_RandomX_releaseDataSet(
 extern "C"
 JNIEXPORT jlong JNICALL Java_io_xdag_crypto_jni_RandomX_createVm(
         JNIEnv *env,
-        jobject *obj,
+        jclass obj,
         jlong jcache,
         jlong jdataset,
         jint jminers) {
@@ -177,7 +181,7 @@ JNIEXPORT jlong JNICALL Java_io_xdag_crypto_jni_RandomX_createVm(
 extern "C"
 JNIEXPORT void JNICALL Java_io_xdag_crypto_jni_RandomX_destroyVm(
         JNIEnv *env,
-        jobject *obj,
+        jclass obj,
         jlong jrxvm) {
     randomx_vm* rx_vm=(randomx_vm*)jrxvm;
     randomx_destroy_vm(rx_vm);
@@ -187,7 +191,7 @@ JNIEXPORT void JNICALL Java_io_xdag_crypto_jni_RandomX_destroyVm(
 extern "C"
 JNIEXPORT jbyteArray JNICALL Java_io_xdag_crypto_jni_RandomX_calculateHash(
         JNIEnv *env,
-        jobject *obj,
+        jclass obj,
         jlong jrxvm,
         jbyteArray jdata,
         jint jlen){

@@ -23,65 +23,7 @@
  */
 package io.xdag.crypto.jni;
 
-import org.apache.commons.lang3.SystemUtils;
-
-import java.io.*;
-import java.nio.file.Files;
-import java.util.Objects;
-
 public class RandomX {
-
-    protected static File nativeDir;
-    protected static boolean enabled = false;
-
-    // initialize library when the class loads
-    static {
-        init();
-    }
-
-    /**
-     * Initializes the native libraries
-     */
-    protected static void init() {
-        if(SystemUtils.IS_OS_LINUX) {
-            enabled = loadLibrary("/native/Linux-x86_64/librandomx.so");
-        } else if(SystemUtils.IS_OS_MAC) {
-            enabled = loadLibrary("/native/Darwin-x86_64/librandomx.dylib");
-        } else if(SystemUtils.IS_OS_MAC) {
-            loadLibrary("/native/Windows-x86_64/librandomx.dll");
-        }
-    }
-
-    /**
-     * Loads a library file from bundled resource.
-     */
-    protected static boolean loadLibrary(String resource) {
-        try {
-            if (nativeDir == null) {
-                nativeDir = Files.createTempDirectory("native").toFile();
-                nativeDir.deleteOnExit();
-            }
-
-            String name = resource.contains("/") ? resource.substring(resource.lastIndexOf('/') + 1) : resource;
-            File file = new File(nativeDir, name);
-
-            if (!file.exists()) {
-                InputStream in = RandomX.class.getResourceAsStream(resource); // null pointer exception
-                OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-                for (int c; (c = Objects.requireNonNull(in).read()) != -1; ) {
-                    out.write(c);
-                }
-                out.close();
-                in.close();
-            }
-
-            System.load(file.getAbsolutePath());
-            return true;
-        } catch (Exception | UnsatisfiedLinkError e) {
-            System.err.println("Failed to load native library:" + e.getMessage());
-            return false;
-        }
-    }
 
     public static native long allocCache();
 
