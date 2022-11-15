@@ -8,7 +8,7 @@
 JDK   : v17
 Maven : v3.8.3
 ```
-xdaj-native-randomx is an implements of RandomX use Java JNI.
+xdagj-native-randomx is an implements of RandomX use Java JNI.
 
 XDAG：+89Zijf2XsXqbdVK7rdfR4F8+RkHkAPh
 
