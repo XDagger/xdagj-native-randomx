@@ -21,19 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package io.xdag.crypto.jna;
+package io.xdag.crypto.randomx;
 
 import com.ochafik.lang.jnaerator.runtime.NativeSize;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
+/**
+ * RandomX VM JNA Interface
+ */
 public class RandomXVM {
 
     PointerByReference pointer;
     RandomXWrapper parent;
 
-    RandomXVM(PointerByReference pointer, RandomXWrapper parent) {
+    public RandomXVM(PointerByReference pointer, RandomXWrapper parent) {
         this.pointer = pointer;
         this.parent = parent;
     }
@@ -44,17 +47,16 @@ public class RandomXVM {
      * @return the resulting hash
      */
     public synchronized byte[] getHash(byte[] message) {
-
         Pointer msgPointer = new Memory(message.length);
         msgPointer.write(0, message, 0, message.length);
 
-        Pointer hashPointer = new Memory(RandomXWrapper.HASH_SIZE);
-        RandomXLib.INSTANCE.randomx_calculate_hash(pointer, msgPointer, new NativeSize(message.length), hashPointer);
+        Pointer hashPointer = new Memory(RandomXUtils.HASH_SIZE);
+        RandomXJNA.INSTANCE.randomx_calculate_hash(pointer, msgPointer, new NativeSize(message.length), hashPointer);
 
-        byte[] hash = hashPointer.getByteArray(0, RandomXWrapper.HASH_SIZE);
+        byte[] hash = hashPointer.getByteArray(0, RandomXUtils.HASH_SIZE);
 
         msgPointer.clear(message.length);
-        hashPointer.clear(RandomXWrapper.HASH_SIZE);
+        hashPointer.clear(RandomXUtils.HASH_SIZE);
 
         return hash;
     }
@@ -67,7 +69,7 @@ public class RandomXVM {
      * Destroy this VM
      */
     public void destroy() {
-        RandomXLib.INSTANCE.randomx_destroy_vm(pointer);
+        RandomXJNA.INSTANCE.randomx_destroy_vm(pointer);
         parent.vms.remove(this);
     }
 

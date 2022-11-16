@@ -21,19 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package io.xdag.crypto.jna;
+package io.xdag.crypto.randomx;
 
 import com.ochafik.lang.jnaerator.runtime.NativeSize;
 import com.sun.jna.Library;
-import com.sun.jna.Native;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
-public interface RandomXLib extends Library {
+/**
+ * RandomX JNA Interface
+ */
+public interface RandomXJNA extends Library {
 
-    String JNA_LIBRARY_NAME = "randomx";
-    RandomXLib INSTANCE = loadLib();
+    RandomXJNA INSTANCE = RandomXUtils.loadJNALibrary();
 
     int randomx_get_flags();
 
@@ -41,30 +42,24 @@ public interface RandomXLib extends Library {
 
     void randomx_init_cache(PointerByReference cache, Pointer key, NativeSize keySize);
 
-    PointerByReference randomx_create_vm(int flags, PointerByReference cache, PointerByReference dataset);
-
-    void randomx_calculate_hash(PointerByReference machine, Pointer input, NativeSize inputSize, Pointer output);
-
     void randomx_release_cache(PointerByReference cache);
+
+    PointerByReference randomx_create_vm(int flags, PointerByReference cache, PointerByReference dataset);
 
     void randomx_destroy_vm(PointerByReference machine);
 
     void randomx_vm_set_cache(PointerByReference machine, PointerByReference cache);
 
-    PointerByReference randomx_alloc_dataset(int flags);
+    void randomx_calculate_hash(PointerByReference machine, Pointer input, NativeSize inputSize, Pointer output);
 
-    NativeLong randomx_dataset_item_count();
+    PointerByReference randomx_alloc_dataset(int flags);
 
     void randomx_init_dataset(PointerByReference dataset, PointerByReference cache, NativeLong startItem, NativeLong itemCount);
 
-    void randomx_release_dataset(PointerByReference dataset);
-
     void randomx_vm_set_dataset(PointerByReference machine, PointerByReference dataset);
 
-    /**
-     * Extract library from jar to lib/ directory then load it
-     */
-    private static RandomXLib loadLib() {
-        return Native.load(JNA_LIBRARY_NAME, RandomXLib.class);
-    }
+    NativeLong randomx_dataset_item_count();
+
+    void randomx_release_dataset(PointerByReference dataset);
+
 }

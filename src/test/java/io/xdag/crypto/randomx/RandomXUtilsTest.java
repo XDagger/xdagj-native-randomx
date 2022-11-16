@@ -21,25 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package io.xdag.crypto.jni;
+package io.xdag.crypto.randomx;
 
-public class RandomX {
+import org.junit.Test;
+import static org.junit.Assert.*;
 
-    public static native long allocCache();
+public class RandomXUtilsTest {
 
-    public static native long initCache(long cache, byte[] key, int len);
+    @Test
+    public void testLoadJNALibrary() {
+        RandomXJNA lib = RandomXUtils.loadJNALibrary();
+        assertNotNull(lib);
+    }
 
-    public static native void releaseCache(long cache);
-
-    public static native long allocDataSet();
-
-    public static native long initDataSet(long cache, long dataset, int miners);
-
-    public static native void releaseDataSet(long dataset);
-
-    public static native long createVm(long cache, long dataset, int miners);
-
-    public static native long destroyVm(long vm);
-
-    public static native byte[] calculateHash(long vm, byte[] data, int length);
 }

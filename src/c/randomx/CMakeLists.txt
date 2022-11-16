@@ -52,8 +52,7 @@ src/instructions_portable.cpp
 src/reciprocal.c
 src/virtual_machine.cpp
 src/vm_compiled_light.cpp
-src/blake2/blake2b.c
-src/randomx_jni.cpp)
+src/blake2/blake2b.c)
 
 if(NOT ARCH_ID)
   # allow cross compiling
@@ -177,7 +176,6 @@ add_library(randomx SHARED ${randomx_sources})
 if(TARGET generate-asm)
   add_dependencies(randomx generate-asm)
 endif()
-target_include_directories(randomx PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../jni/)
 target_link_libraries(randomx
     PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 set_property(TARGET randomx PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -193,7 +191,7 @@ install(TARGETS randomx
 
 
 #copy library to target directory
-set(RANDOMX_TARGET_DIR ${CMAKE_CURRENT_LIST_DIR}/../../main/resources/native/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR})
+set(RANDOMX_TARGET_DIR ${CMAKE_CURRENT_LIST_DIR}/../../main/resources/)
 add_custom_command(
     TARGET randomx
     POST_BUILD

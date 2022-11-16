@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package io.xdag.crypto.jna;
+package io.xdag.crypto.randomx;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,8 +34,6 @@ import com.sun.jna.ptr.PointerByReference;
 
 public class RandomXWrapper {
 
-    public static final int HASH_SIZE = 32;
-
     private PointerByReference cache;
     private PointerByReference dataset;
 
@@ -43,7 +41,7 @@ public class RandomXWrapper {
 
     boolean fastInit;
 
-    private Pointer key;
+    private Pointer memory;
     private int keySize;
 
     private int flagsValue = 0;
@@ -55,19 +53,19 @@ public class RandomXWrapper {
     private RandomXWrapper(Builder builder) {
         fastInit = builder.fastInit;
         flags = builder.flags;
-        if(flags.size() == 0) {
-            flagsValue = RandomXLib.INSTANCE.randomx_get_flags();
+        if( flags.size() == 0 ) {
+            flagsValue = RandomXJNA.INSTANCE.randomx_get_flags();
         } else {
             if(builder.recommendedFlags) {
-                flagsValue = RandomXLib.INSTANCE.randomx_get_flags();
+                flagsValue = RandomXJNA.INSTANCE.randomx_get_flags();
 
                 //Add flags not included by randomx_get_flags if present in flags list
                 if(flags.contains(Flag.FULL_MEM))
-                    flagsValue+=Flag.FULL_MEM.value;
+                    flagsValue += Flag.FULL_MEM.value;
                 if(flags.contains(Flag.LARGE_PAGES))
-                    flagsValue+=Flag.LARGE_PAGES.value;
+                    flagsValue += Flag.LARGE_PAGES.value;
                 if(flags.contains(Flag.SECURE))
-                    flagsValue+=Flag.SECURE.value;
+                    flagsValue += Flag.SECURE.value;
 
             } else {
                 for(Flag flag : flags) {
@@ -83,7 +81,7 @@ public class RandomXWrapper {
      */
     public void init(byte[] key) {
         if(flags.contains(Flag.FULL_MEM)) {
-            setDataSet(key);
+            setDataset(key);
         } else {
             setCache(key);
         }
@@ -95,7 +93,7 @@ public class RandomXWrapper {
      * @return RandomX_VM an Object representing the resulting VM
      */
     public RandomXVM createVM() {
-        RandomXVM vm = new RandomXVM(RandomXLib.INSTANCE.randomx_create_vm(flagsValue, cache, dataset), this);
+        RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset), this);
         vms.add(vm);
         return vm;
     }
@@ -105,19 +103,19 @@ public class RandomXWrapper {
      * @param key The key to initialize randomX with. (generally a hash)
      */
     private void setCache(byte[] key) {
-        if(this.key != null && Arrays.equals(key, this.key.getByteArray(0, keySize)))
+        if(this.memory != null && Arrays.equals(key, this.memory.getByteArray(0, keySize)))
             return;
 
-        PointerByReference newCache = RandomXLib.INSTANCE.randomx_alloc_cache(flagsValue);
+        PointerByReference newCache = RandomXJNA.INSTANCE.randomx_alloc_cache(flagsValue);
 
-        this.key = new Memory(key.length);
-        this.key.write(0, key, 0, key.length);
+        this.memory = new Memory(key.length);
+        this.memory.write(0, key, 0, key.length);
         keySize = key.length;
 
-        RandomXLib.INSTANCE.randomx_init_cache(newCache, this.key, new NativeSize(key.length));
+        RandomXJNA.INSTANCE.randomx_init_cache(newCache, this.memory, new NativeSize(key.length));
 
         if(cache != null) {
-            RandomXLib.INSTANCE.randomx_release_cache(cache);
+            RandomXJNA.INSTANCE.randomx_release_cache(cache);
         }
 
         cache = newCache;
@@ -127,8 +125,8 @@ public class RandomXWrapper {
      * Initialize randomX dataset for a specific key
      * @param key The key to initialize randomX with. (generally a hash)
      */
-    private void setDataSet(byte[] key) {
-        if(this.key != null && Arrays.equals(key, this.key.getByteArray(0, keySize))) {
+    private void setDataset(byte[] key) {
+        if(this.memory != null && Arrays.equals(key, this.memory.getByteArray(0, keySize))) {
             return;
         }
 
@@ -139,9 +137,9 @@ public class RandomXWrapper {
 
         //Allocate memory for dataset
         if(flags.contains(Flag.LARGE_PAGES)) {
-            newDataset = RandomXLib.INSTANCE.randomx_alloc_dataset(Flag.LARGE_PAGES.getValue());
+            newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(Flag.LARGE_PAGES.getValue());
         } else {
-            newDataset = RandomXLib.INSTANCE.randomx_alloc_dataset(0);
+            newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(0);
         }
 
         if(fastInit) {
@@ -151,14 +149,14 @@ public class RandomXWrapper {
              */
             ArrayList<Thread> threads = new ArrayList<>();
             int threadCount = Runtime.getRuntime().availableProcessors();
-            long perThread = RandomXLib.INSTANCE.randomx_dataset_item_count().longValue() / threadCount;
-            long remainder = RandomXLib.INSTANCE.randomx_dataset_item_count().longValue() % threadCount;
+            long perThread = RandomXJNA.INSTANCE.randomx_dataset_item_count().longValue() / threadCount;
+            long remainder = RandomXJNA.INSTANCE.randomx_dataset_item_count().longValue() % threadCount;
 
             long startItem = 0;
             for (int i = 0; i < threadCount; ++i) {
                 long count = perThread + (i == threadCount - 1 ? remainder : 0);
                 long start = startItem;
-                Thread thread = new Thread(() -> RandomXLib.INSTANCE.randomx_init_dataset(newDataset, cache, new NativeLong(start), new NativeLong(count)));
+                Thread thread = new Thread(() -> RandomXJNA.INSTANCE.randomx_init_dataset(newDataset, cache, new NativeLong(start), new NativeLong(count)));
                 thread.start();
                 threads.add(thread);
                 startItem += count;
@@ -172,16 +170,16 @@ public class RandomXWrapper {
             }
 
         }   else {
-            RandomXLib.INSTANCE.randomx_init_dataset(newDataset, cache, new NativeLong(0), RandomXLib.INSTANCE.randomx_dataset_item_count());
+            RandomXJNA.INSTANCE.randomx_init_dataset(newDataset, cache, new NativeLong(0), RandomXJNA.INSTANCE.randomx_dataset_item_count());
         }
 
         //Release the cache that was used to create the dataset
-        RandomXLib.INSTANCE.randomx_release_cache(cache);
+        RandomXJNA.INSTANCE.randomx_release_cache(cache);
         cache = null;
 
         //If there is a old dataset release it before remplacing by the new one
         if(dataset != null) {
-            RandomXLib.INSTANCE.randomx_release_dataset(dataset);
+            RandomXJNA.INSTANCE.randomx_release_dataset(dataset);
         }
         dataset = newDataset;
     }
@@ -192,14 +190,14 @@ public class RandomXWrapper {
      */
     public void changeKey(byte[] key) {
         if(flags.contains(Flag.FULL_MEM)) {
-            setDataSet(key);
+            setDataset(key);
             for(RandomXVM vm : vms) {
-                RandomXLib.INSTANCE.randomx_vm_set_dataset(vm.getPointer(), dataset);
+                RandomXJNA.INSTANCE.randomx_vm_set_dataset(vm.getPointer(), dataset);
             }
         }   else    {
             setCache(key);
             for(RandomXVM vm : vms) {
-                RandomXLib.INSTANCE.randomx_vm_set_cache(vm.getPointer(), cache);
+                RandomXJNA.INSTANCE.randomx_vm_set_cache(vm.getPointer(), cache);
             }
         }
 
@@ -210,38 +208,36 @@ public class RandomXWrapper {
      */
     public void destroy() {
         for(RandomXVM vm : vms) {
-            RandomXLib.INSTANCE.randomx_destroy_vm(vm.getPointer());
+            RandomXJNA.INSTANCE.randomx_destroy_vm(vm.getPointer());
         }
         vms.clear();
         if(cache != null) {
-            RandomXLib.INSTANCE.randomx_release_cache(cache);
+            RandomXJNA.INSTANCE.randomx_release_cache(cache);
             cache = null;
         }
         if(dataset != null) {
-            RandomXLib.INSTANCE.randomx_release_dataset(cache);
+            RandomXJNA.INSTANCE.randomx_release_dataset(cache);
             dataset = null;
         }
     }
 
     /**
-     * New RandomX instance builder
+     * New RandomXWrapper instance builder
      *
      * <p>
      * Example:<br><br>
-     * {@code RandomX randomX = new RandomX.Builder()}<br>
+     * {@code RandomXWrapper randomX = new RandomXWrapper.Builder()}<br>
      * {@code .build();}
      *
      * {@code randomX.init(hash);}
-     * {@code RandomX_VM vm = randomX.createVM();}
+     * {@code RandomXVM vm = randomX.createVM();}
      * {@code byte[] hash = vm.getHash(bytes);}
      * <p>
      *
      */
     public static class Builder {
-
         private boolean recommendedFlags = false;
-        private ArrayList<Flag> flags = new ArrayList<Flag>();
-
+        private ArrayList<Flag> flags = new ArrayList<>();
         private boolean fastInit = false;
 
         public RandomXWrapper build() {
@@ -285,15 +281,6 @@ public class RandomXWrapper {
             return value;
         }
 
-    }
-
-    public static void main(String[] args) {
-        RandomXWrapper.Builder builder = new Builder();
-        builder.flag(Flag.JIT);
-        builder.fastInit(true);
-        RandomXWrapper randomx = new RandomXWrapper(builder);
-        byte[] cache = new byte[32];
-        randomx.init(cache);
     }
 
 }
