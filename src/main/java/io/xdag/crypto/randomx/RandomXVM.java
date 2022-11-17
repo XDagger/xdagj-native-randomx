@@ -69,7 +69,9 @@ public class RandomXVM {
      */
     public void destroy() {
         RandomXJNA.INSTANCE.randomx_destroy_vm(pointer);
-        parent.vms.remove(this);
+        if(parent != null) {
+            parent.vms.remove(this);
+        }
     }
 
 }

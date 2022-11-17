@@ -30,6 +30,10 @@ public class NativeSize extends IntegerType  {
 
     public static int SIZE = Native.SIZE_T_SIZE;
 
+    public NativeSize() {
+        this(0);
+    }
+
     public NativeSize(long value) {
         super(SIZE, value);
     }

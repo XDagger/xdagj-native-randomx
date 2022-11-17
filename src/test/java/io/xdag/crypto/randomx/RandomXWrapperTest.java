@@ -23,7 +23,6 @@
  */
 package io.xdag.crypto.randomx;
 
-import java.nio.charset.StandardCharsets;
 import org.junit.Test;
 
 public class RandomXWrapperTest {
@@ -76,7 +75,6 @@ public class RandomXWrapperTest {
 
         byte[] buffer = new byte[32];
         randomx.changeKey(buffer);
-
         randomx.destroy();
     }
 
