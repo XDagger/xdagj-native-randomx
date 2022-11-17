@@ -23,13 +23,14 @@
  */
 package io.xdag.crypto.randomx;
 
-import com.ochafik.lang.jnaerator.runtime.NativeSize;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static io.xdag.crypto.randomx.RandomXJNA.*;
+
+import java.util.Arrays;
 
 public class RandomXJNATest {
 
@@ -135,7 +136,7 @@ public class RandomXJNATest {
         RandomXJNA.INSTANCE.randomx_calculate_hash(vm.getPointer(), msgPointer, new NativeSize(message.length), hashPointer);
 
         byte[] hash = hashPointer.getByteArray(0, RandomXUtils.HASH_SIZE);
-        System.out.println(hash);
+        System.out.println(Arrays.toString(hash));
         msgPointer.clear(message.length);
         hashPointer.clear(RandomXUtils.HASH_SIZE);
     }
@@ -165,8 +166,7 @@ public class RandomXJNATest {
         Memory memory = new Memory(length);
         memory.write(0, buffer, 0, length);
         INSTANCE.randomx_init_cache(cache, memory, new NativeSize(length));
-        RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flags, cache, dataset), new RandomXWrapper.Builder().build());
-        return vm;
+        return new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flags, cache, dataset), new RandomXWrapper.Builder().build());
     }
 
 }

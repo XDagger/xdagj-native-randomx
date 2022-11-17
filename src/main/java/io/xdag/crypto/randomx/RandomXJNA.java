@@ -23,7 +23,6 @@
  */
 package io.xdag.crypto.randomx;
 
-import com.ochafik.lang.jnaerator.runtime.NativeSize;
 import com.sun.jna.Library;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;

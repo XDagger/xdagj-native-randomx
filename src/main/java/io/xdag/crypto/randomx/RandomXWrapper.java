@@ -26,7 +26,6 @@ package io.xdag.crypto.randomx;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.ochafik.lang.jnaerator.runtime.NativeSize;
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
@@ -45,7 +44,7 @@ public class RandomXWrapper {
     private int keySize;
 
     private int flagsValue = 0;
-    private ArrayList<Flag> flags;
+    private final ArrayList<Flag> flags;
 
     /**
      * Create a randomX instance using builder provided informations
@@ -166,7 +165,9 @@ public class RandomXWrapper {
             for(Thread thread : threads) {
                 try {
                     thread.join();
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
         }   else {
@@ -237,7 +238,7 @@ public class RandomXWrapper {
      */
     public static class Builder {
         private boolean recommendedFlags = false;
-        private ArrayList<Flag> flags = new ArrayList<>();
+        private final ArrayList<Flag> flags = new ArrayList<>();
         private boolean fastInit = false;
 
         public RandomXWrapper build() {
@@ -271,7 +272,7 @@ public class RandomXWrapper {
         ARGON2_AVX2(64),
         ARGON2(96);
 
-        private int value;
+        private final int value;
 
         Flag(int value){
             this.value = value;
