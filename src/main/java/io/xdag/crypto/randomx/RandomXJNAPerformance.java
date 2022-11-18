@@ -70,7 +70,6 @@ public class RandomXJNAPerformance {
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(RandomXJNAPerformance.class.getSimpleName())
-                .addProfiler(LinuxPerfProfiler.class)
                 .build();
         new Runner(opt).run();
     }
