@@ -129,7 +129,7 @@ public class RandomXJNATest {
         byte[] key1Bytes = key1.getBytes();
         byte[] key2Bytes = key2.getBytes();
 
-        int flags = INSTANCE.randomx_get_flags();
+        int flags = INSTANCE.randomx_get_flags() + RandomXWrapper.Flag.LARGE_PAGES.getValue() + RandomXWrapper.Flag.FULL_MEM.getValue();
 
         PointerByReference cache = INSTANCE.randomx_alloc_cache(flags);
         PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);

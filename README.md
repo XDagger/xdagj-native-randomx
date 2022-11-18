@@ -75,6 +75,19 @@ mvn package
 java -jar target/benchmarks.jar RandomXJNAPerformance
 ```
 
+result of ubuntu:
+
+```
+system ：Ubuntu 22.04.1 LTS
+CPU    ：Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz   2.60 GHz
+RAM    ：32.0 GB
+```
+
+|           Benchmark            | Mode  | Cnt  | Score  |  Error  | Units |
+| :----------------------------: | :---: | :--: | :----: | :-----: | :---: |
+| RandomXJNAPerformance.testHash | thrpt |  25  | 35.683 | ± 1.081 | ops/s |
+| RandomXJNAPerformance.testHash | avgt  |  25  | 0.027  | ± 0.001 | s/op  |
+
 
 
 
