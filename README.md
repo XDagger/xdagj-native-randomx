@@ -41,17 +41,17 @@ String key = "hello xdagj";
 byte[] keyBytes = key.getBytes();
 
 // 1. set flages 
-int flags = INSTANCE.randomx_get_flags();
+int flags = RandomXJNA.INSTANCE.randomx_get_flags();
 
 // 2. alloc cache and dataset 
-PointerByReference cache = INSTANCE.randomx_alloc_cache(flags);
+PointerByReference cache = RandomXJNA.INSTANCE.randomx_alloc_cache(flags);
 PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
 
 // 3. init cache and dataset
 Memory memory = new Memory(keyBytes.length);
 memory.write(0, keyBytes, 0, keyBytes.length);
-INSTANCE.randomx_init_cache(cache, memory, new NativeSize(keyBytes.length));
-INSTANCE.randomx_init_dataset(dataset, cache, new NativeLong(0), RandomXJNA.INSTANCE.randomx_dataset_item_count());
+RandomXJNA.INSTANCE.randomx_init_cache(cache, memory, new NativeSize(keyBytes.length));
+RandomXJNA.INSTANCE.randomx_init_dataset(dataset, cache, new NativeLong(0), RandomXJNA.INSTANCE.randomx_dataset_item_count());
 
 // 4. alloc memory and set value
 Pointer msgPointer = new Memory(keyBytes.length);
