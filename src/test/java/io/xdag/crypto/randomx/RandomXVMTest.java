@@ -28,7 +28,6 @@ import static io.xdag.crypto.randomx.RandomXJNA.INSTANCE;
 import com.google.common.io.BaseEncoding;
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
-import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -52,14 +51,10 @@ public class RandomXVMTest {
         INSTANCE.randomx_init_cache(cache, memory, new NativeSize(key1Bytes.length));
         INSTANCE.randomx_init_dataset(dataset, cache, new NativeLong(0), RandomXJNA.INSTANCE.randomx_dataset_item_count());
 
-        Pointer msgPointer = new Memory(key2Bytes.length);
-        Pointer hashPointer = new Memory(RandomXUtils.HASH_SIZE);
-
         RandomXVM vm = createVM(flags, cache, dataset);
         byte[] hash = vm.getHash(key2Bytes);
+
         assertEquals("781315d3e78dc16a5060cb87677ca548d8b9aabdef5221a2851b2cc72aa2875b", BaseEncoding.base16().lowerCase().encode(hash));
-        msgPointer.clear(key2Bytes.length);
-        hashPointer.clear(RandomXUtils.HASH_SIZE);
     }
 
     @Test

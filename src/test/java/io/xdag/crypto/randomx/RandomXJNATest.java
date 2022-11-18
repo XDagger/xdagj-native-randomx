@@ -36,7 +36,7 @@ public class RandomXJNATest {
 
     @Test
     public void testRandomx_get_flags() {
-        int flagsValue = RandomXJNA.INSTANCE.randomx_get_flags();
+        int flagsValue = INSTANCE.randomx_get_flags();
         assertNotEquals(0, flagsValue);
     }
 
