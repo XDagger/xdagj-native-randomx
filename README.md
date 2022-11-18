@@ -30,7 +30,7 @@ Maven : v3.8.3
 
 ### 2. compile
 
-```yaml
+```shell
 mvn package
 ```
 
@@ -65,4 +65,17 @@ RandomXJNA.INSTANCE.randomx_calculate_hash(vm.getPointer(), msgPointer, new Nati
 // 6. get hash value from memory
 byte[] hash = hashPointer.getByteArray(0, RandomXUtils.HASH_SIZE);
 ```
+
+### 4. benchmark
+
+JMH is a Java harness for building, running, and analysing nano/micro/milli/macro benchmarks written in Java and other languages targetting the JVM
+
+```shell
+mvn package
+java -jar target/benchmarks.jar RandomXJNAPerformance
+```
+
+
+
+
 
