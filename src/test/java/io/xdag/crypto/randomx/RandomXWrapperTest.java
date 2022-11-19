@@ -25,57 +25,59 @@ package io.xdag.crypto.randomx;
 
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
+
 public class RandomXWrapperTest {
 
     @Test
     public void testInit() {
-        RandomXWrapper.Builder builder = new RandomXWrapper.Builder();
-        builder.flag(RandomXWrapper.Flag.JIT);
-        builder.fastInit(true);
-        RandomXWrapper randomx = builder.build();
+        RandomXWrapper randomXWrapper = RandomXWrapper.builder()
+                .flags(Lists.newArrayList(RandomXWrapper.Flag.JIT))
+                .fastInit(true)
+                .build();
         byte[] cache = new byte[32];
-        randomx.init(cache);
+        randomXWrapper.init(cache);
     }
 
     @Test
     public void testCreateVM() {
-        RandomXWrapper.Builder builder = new RandomXWrapper.Builder();
-        builder.flag(RandomXWrapper.Flag.JIT);
-        builder.fastInit(true);
-        RandomXWrapper randomx = builder.build();
+        RandomXWrapper randomXWrapper = RandomXWrapper.builder()
+                .flags(Lists.newArrayList(RandomXWrapper.Flag.JIT))
+                .fastInit(true)
+                .build();
         byte[] cache = new byte[32];
-        randomx.init(cache);
+        randomXWrapper.init(cache);
 
-        randomx.createVM();
+        randomXWrapper.createVM();
     }
 
     @Test
     public void testChangeKey() {
-        RandomXWrapper.Builder builder = new RandomXWrapper.Builder();
-        builder.flag(RandomXWrapper.Flag.JIT);
-        builder.fastInit(true);
-        RandomXWrapper randomx = builder.build();
+        RandomXWrapper randomXWrapper = RandomXWrapper.builder()
+                .flags(Lists.newArrayList(RandomXWrapper.Flag.JIT))
+                .fastInit(true)
+                .build();
         byte[] cache = new byte[32];
-        randomx.init(cache);
-        randomx.createVM();
+        randomXWrapper.init(cache);
+        randomXWrapper.createVM();
 
         byte[] buffer = new byte[32];
-        randomx.changeKey(buffer);
+        randomXWrapper.changeKey(buffer);
     }
 
     @Test
     public void testDestroy() {
-        RandomXWrapper.Builder builder = new RandomXWrapper.Builder();
-        builder.flag(RandomXWrapper.Flag.JIT);
-        builder.fastInit(true);
-        RandomXWrapper randomx = builder.build();
+        RandomXWrapper randomXWrapper = RandomXWrapper.builder()
+                .flags(Lists.newArrayList(RandomXWrapper.Flag.JIT))
+                .fastInit(true)
+                .build();
         byte[] cache = new byte[32];
-        randomx.init(cache);
-        randomx.createVM();
+        randomXWrapper.init(cache);
+        randomXWrapper.createVM();
 
         byte[] buffer = new byte[32];
-        randomx.changeKey(buffer);
-        randomx.destroy();
+        randomXWrapper.changeKey(buffer);
+        randomXWrapper.destroy();
     }
 
 }

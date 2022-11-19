@@ -26,17 +26,21 @@ package io.xdag.crypto.randomx;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import com.google.common.collect.Lists;
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
-public class RandomXWrapper {
+import lombok.Builder;
+
+@Builder
+public final class RandomXWrapper {
 
     private PointerByReference cache;
     private PointerByReference dataset;
 
-    ArrayList<RandomXVM> vms = new ArrayList<>();
+    protected final ArrayList<RandomXVM> vms = Lists.newArrayList();
 
     boolean fastInit;
 
@@ -45,34 +49,6 @@ public class RandomXWrapper {
 
     private int flagsValue = 0;
     private final ArrayList<Flag> flags;
-
-    /**
-     * Create a randomX instance using builder provided informations
-     */
-    private RandomXWrapper(Builder builder) {
-        fastInit = builder.fastInit;
-        flags = builder.flags;
-        if( flags.size() == 0 ) {
-            flagsValue = RandomXJNA.INSTANCE.randomx_get_flags();
-        } else {
-            if(builder.recommendedFlags) {
-                flagsValue = RandomXJNA.INSTANCE.randomx_get_flags();
-
-                //Add flags not included by randomx_get_flags if present in flags list
-                if(flags.contains(Flag.FULL_MEM))
-                    flagsValue += Flag.FULL_MEM.value;
-                if(flags.contains(Flag.LARGE_PAGES))
-                    flagsValue += Flag.LARGE_PAGES.value;
-                if(flags.contains(Flag.SECURE))
-                    flagsValue += Flag.SECURE.value;
-
-            } else {
-                for(Flag flag : flags) {
-                    flagsValue += flag.value;
-                }
-            }
-        }
-    }
 
     /**
      * Initialize randomX cache or dataset for a specific key
@@ -217,47 +193,8 @@ public class RandomXWrapper {
             cache = null;
         }
         if(dataset != null) {
-            RandomXJNA.INSTANCE.randomx_release_dataset(cache);
+            RandomXJNA.INSTANCE.randomx_release_dataset(dataset);
             dataset = null;
-        }
-    }
-
-    /**
-     * New RandomXWrapper instance builder
-     *
-     * <p>
-     * Example:<br><br>
-     * {@code RandomXWrapper randomX = new RandomXWrapper.Builder()}<br>
-     * {@code .build();}
-     *
-     * {@code randomX.init(hash);}
-     * {@code RandomXVM vm = randomX.createVM();}
-     * {@code byte[] hash = vm.getHash(bytes);}
-     * <p>
-     *
-     */
-    public static class Builder {
-        private boolean recommendedFlags = false;
-        private final ArrayList<Flag> flags = new ArrayList<>();
-        private boolean fastInit = false;
-
-        public RandomXWrapper build() {
-            return new RandomXWrapper(this);
-        }
-
-        public Builder fastInit(boolean value) {
-            fastInit = value;
-            return this;
-        }
-
-        public Builder recommendedFlags() {
-            recommendedFlags = true;
-            return this;
-        }
-
-        public Builder flag(Flag flag) {
-            flags.add(flag);
-            return this;
         }
     }
 
