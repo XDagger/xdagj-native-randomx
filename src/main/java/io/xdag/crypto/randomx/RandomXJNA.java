@@ -33,7 +33,6 @@ import com.sun.jna.ptr.PointerByReference;
  */
 public interface RandomXJNA extends Library {
 
-
     RandomXJNA INSTANCE = RandomXUtils.loadJNALibrary();
 
     int randomx_get_flags();

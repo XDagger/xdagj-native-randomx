@@ -122,7 +122,8 @@ public final class RandomXWrapper {
              * If fastInit enabled use all cores to create the dataset
              * by equally distributing work between them
              */
-            ArrayList<Thread> threads = new ArrayList<>();
+            ArrayList<Thread> threads = Lists.newArrayList();
+
             int threadCount = Runtime.getRuntime().availableProcessors();
             long perThread = RandomXJNA.INSTANCE.randomx_dataset_item_count().longValue() / threadCount;
             long remainder = RandomXJNA.INSTANCE.randomx_dataset_item_count().longValue() % threadCount;
@@ -146,7 +147,7 @@ public final class RandomXWrapper {
                 }
             }
 
-        }   else {
+        } else {
             RandomXJNA.INSTANCE.randomx_init_dataset(newDataset, cache, new NativeLong(0), RandomXJNA.INSTANCE.randomx_dataset_item_count());
         }
 
@@ -169,12 +170,17 @@ public final class RandomXWrapper {
         if(flags.contains(Flag.FULL_MEM)) {
             setDataset(key);
             for(RandomXVM vm : vms) {
-                RandomXJNA.INSTANCE.randomx_vm_set_dataset(vm.getPointer(), dataset);
+                if(vm.getPointer() != null) {
+                    RandomXJNA.INSTANCE.randomx_vm_set_dataset(vm.getPointer(), dataset);
+                }
+
             }
-        }   else    {
+        } else {
             setCache(key);
             for(RandomXVM vm : vms) {
-                RandomXJNA.INSTANCE.randomx_vm_set_cache(vm.getPointer(), cache);
+                if(vm.getPointer() != null) {
+                    RandomXJNA.INSTANCE.randomx_vm_set_cache(vm.getPointer(), cache);
+                }
             }
         }
 
@@ -185,7 +191,9 @@ public final class RandomXWrapper {
      */
     public void destroy() {
         for(RandomXVM vm : vms) {
-            RandomXJNA.INSTANCE.randomx_destroy_vm(vm.getPointer());
+            if(vm.getPointer() != null) {
+                RandomXJNA.INSTANCE.randomx_destroy_vm(vm.getPointer());
+            }
         }
         vms.clear();
         if(cache != null) {
@@ -218,7 +226,6 @@ public final class RandomXWrapper {
         public int getValue() {
             return value;
         }
-
     }
 
 }
