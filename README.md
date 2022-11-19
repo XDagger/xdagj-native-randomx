@@ -30,11 +30,54 @@ Maven : v3.8.3
 
 ### 2. compile
 
+### 2.1 checkout 
 ```shell
+git clone https://github.com/XDagger/xdagj-native-randomx.git
+cd xdagj-native-randomx
+git submodule init
+git submodule update
+```
+### 2.2 compile randomx lib 
+
+#### 2.2.1 change cmake setting
+
+```
+cd randomx
+vim CMakeLists.txt
+```
+modify CMakeList.txt in randomx folder.
+change "add_library(randomx ${randomx_sources})" at line 178 to
+"add_library(randomx SHARED ${randomx_sources})"
+
+#### 2.2.2 compile c++ lib
+```
+mkdir build && cd build
+cmake -DARCH=native ..
+make
+cp -i librandomx.dylib ../../src/main/resources
+overwrite ../../src/main/resources/librandomx.dylib? (y/n [n]) y
+```
+
+#### 2.2.3 compile java lib
+
+```
+cd ../../
 mvn package
 ```
 
-### 3. example
+### 3. maven system dependency
+
+```xml
+<dependency>
+    <groupId>io.xdag</groupId>
+    <artifactId>xdagj-native-randomx</artifactId>
+    <version>0.1.3</version>
+    <scope>system</scope>
+    <systemPath>${project.basedir}/lib/xdagj-native-randomx-0.1.3.jar</systemPath>
+</dependency>
+```
+
+### 4. example
 
 ```java
 package io.xdag.crypto.randomx;
@@ -72,7 +115,7 @@ public class Example {
 
 ```
 
-### 4. benchmark
+### 5. benchmark
 
 JMH is a Java harness for building, running, and analysing nano/micro/milli/macro benchmarks written in Java and other languages targetting the JVM
 
