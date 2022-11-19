@@ -27,18 +27,16 @@ import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
+import lombok.Builder;
+
 /**
  * RandomX VM JNA Interface
  */
-public class RandomXVM {
+@Builder
+public final class RandomXVM {
 
     PointerByReference pointer;
     RandomXWrapper parent;
-
-    public RandomXVM(PointerByReference pointer, RandomXWrapper parent) {
-        this.pointer = pointer;
-        this.parent = parent;
-    }
 
     /**
      * Calculate hash of given message

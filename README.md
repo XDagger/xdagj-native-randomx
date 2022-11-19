@@ -30,43 +30,92 @@ Maven : v3.8.3
 
 ### 2. compile
 
+### 2.1 checkout 
 ```shell
+git clone https://github.com/XDagger/xdagj-native-randomx.git
+cd xdagj-native-randomx
+git submodule init
+git submodule update
+```
+### 2.2 compile randomx lib 
+
+#### 2.2.1 change cmake setting
+
+```
+cd randomx
+vim CMakeLists.txt
+```
+modify CMakeList.txt in randomx folder.
+change "add_library(randomx ${randomx_sources})" at line 178 to
+"add_library(randomx SHARED ${randomx_sources})"
+
+#### 2.2.2 compile c++ lib
+```
+mkdir build && cd build
+cmake -DARCH=native ..
+make
+cp -i librandomx.dylib ../../src/main/resources
+overwrite ../../src/main/resources/librandomx.dylib? (y/n [n]) y
+```
+
+#### 2.2.3 compile java lib
+
+```
+cd ../../
 mvn package
 ```
 
-### 3. example
+### 3. maven system dependency
 
-```java
-String key = "hello xdagj";
-byte[] keyBytes = key.getBytes();
-
-// 1. set flages 
-int flags = RandomXJNA.INSTANCE.randomx_get_flags();
-
-// 2. alloc cache and dataset 
-PointerByReference cache = RandomXJNA.INSTANCE.randomx_alloc_cache(flags);
-PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
-
-// 3. init cache and dataset
-Memory memory = new Memory(keyBytes.length);
-memory.write(0, keyBytes, 0, keyBytes.length);
-RandomXJNA.INSTANCE.randomx_init_cache(cache, memory, new NativeSize(keyBytes.length));
-RandomXJNA.INSTANCE.randomx_init_dataset(dataset, cache, new NativeLong(0), RandomXJNA.INSTANCE.randomx_dataset_item_count());
-
-// 4. alloc memory and set value
-Pointer msgPointer = new Memory(keyBytes.length);
-Pointer hashPointer = new Memory(RandomXUtils.HASH_SIZE);
-msgPointer.write(0, keyBytes, 0, keyBytes.length);
-
-// 5. create vm and calculate hash
-RandomXVM vm = createVM(flags, cache, dataset);
-RandomXJNA.INSTANCE.randomx_calculate_hash(vm.getPointer(), msgPointer, new NativeSize(keyBytes.length), hashPointer);
-
-// 6. get hash value from memory
-byte[] hash = hashPointer.getByteArray(0, RandomXUtils.HASH_SIZE);
+```xml
+<dependency>
+    <groupId>io.xdag</groupId>
+    <artifactId>xdagj-native-randomx</artifactId>
+    <version>0.1.3</version>
+    <scope>system</scope>
+    <systemPath>${project.basedir}/lib/xdagj-native-randomx-0.1.3.jar</systemPath>
+</dependency>
 ```
 
-### 4. benchmark
+### 4. example
+
+```java
+package io.xdag.crypto.randomx;
+
+import java.nio.charset.StandardCharsets;
+import com.google.common.collect.Lists;
+import com.google.common.io.BaseEncoding;
+
+public class Example {
+
+    public static void main(String[] args) {
+        String key = "hello xdagj-native-randomx";
+        byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+
+        // 1. build randomx jna wrapper
+        RandomXWrapper randomXWrapper = RandomXWrapper.builder()
+                .flags(Lists.newArrayList(RandomXWrapper.Flag.JIT))
+                .fastInit(true)
+                .build();
+
+        // 2. init dataset or cache
+        randomXWrapper.init(keyBytes);
+
+        // 3. create randomxVm
+        RandomXVM randomxVm = randomXWrapper.createVM();
+
+        // 4. calculate hash
+        byte[] hash = randomxVm.getHash(keyBytes);
+
+        // 5. print result
+        System.out.println("message:" + key);
+        System.out.println("hash:" + BaseEncoding.base16().lowerCase().encode(hash));
+    }
+}
+
+```
+
+### 5. benchmark
 
 JMH is a Java harness for building, running, and analysing nano/micro/milli/macro benchmarks written in Java and other languages targetting the JVM
 

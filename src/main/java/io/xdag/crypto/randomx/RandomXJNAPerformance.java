@@ -36,11 +36,12 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.profile.LinuxPerfProfiler;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+
+import com.google.common.collect.Lists;
 
 @State(Scope.Benchmark)
 @Threads(value = 1)
@@ -54,12 +55,12 @@ public class RandomXJNAPerformance {
 
     @Setup(Level.Trial)
     public void setup() {
-        RandomXWrapper.Builder builder = new RandomXWrapper.Builder();
-        builder.flag(RandomXWrapper.Flag.JIT);
-        builder.fastInit(true);
-        RandomXWrapper randomX = builder.build();
-        randomX.init(RandomUtils.nextBytes(32));
-        randomxVm = randomX.createVM();
+        RandomXWrapper randomXWrapper = RandomXWrapper.builder()
+                .flags(Lists.newArrayList(RandomXWrapper.Flag.JIT))
+                .fastInit(true)
+                .build();
+        randomXWrapper.init(RandomUtils.nextBytes(32));
+        randomxVm = randomXWrapper.createVM();
     }
 
     @Benchmark

@@ -87,7 +87,8 @@ public class RandomXJNATest {
         Memory memory = new Memory(length);
         memory.write(0, buffer, 0, length);
         INSTANCE.randomx_init_cache(cache, memory, new NativeSize(length));
-        RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset), new RandomXWrapper.Builder().build());
+        RandomXWrapper randomXWrapper = RandomXWrapper.builder().build();
+        RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset), randomXWrapper);
         assertNotNull(vm);
     }
 
@@ -104,7 +105,8 @@ public class RandomXJNATest {
         Memory memory = new Memory(length);
         memory.write(0, buffer, 0, length);
         INSTANCE.randomx_init_cache(cache, memory, new NativeSize(length));
-        RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset), new RandomXWrapper.Builder().build());
+        RandomXWrapper randomXWrapper = RandomXWrapper.builder().build();
+        RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset), randomXWrapper);
         assertNotNull(vm);
 
         INSTANCE.randomx_destroy_vm(vm.getPointer());
