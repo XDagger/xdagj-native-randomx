@@ -72,8 +72,6 @@ mvn package
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-native-randomx</artifactId>
     <version>0.1.3</version>
-    <scope>system</scope>
-    <systemPath>${project.basedir}/lib/xdagj-native-randomx-0.1.3.jar</systemPath>
 </dependency>
 ```
 
