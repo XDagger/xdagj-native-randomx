@@ -28,11 +28,13 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
 import lombok.Builder;
+import lombok.ToString;
 
 /**
  * RandomX VM JNA Interface
  */
 @Builder
+@ToString
 public final class RandomXVM {
 
     PointerByReference pointer;
@@ -58,7 +60,7 @@ public final class RandomXVM {
         return hash;
     }
 
-    protected PointerByReference getPointer() {
+    PointerByReference getPointer() {
         return pointer;
     }
 

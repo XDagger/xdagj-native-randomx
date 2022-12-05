@@ -33,29 +33,31 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
 import lombok.Builder;
+import lombok.ToString;
 
 @Builder
+@ToString
 public final class RandomXWrapper {
 
     private PointerByReference cache;
     private PointerByReference dataset;
 
-    protected final ArrayList<RandomXVM> vms = Lists.newArrayList();
+    final ArrayList<RandomXVM> vms = Lists.newArrayList();
 
     boolean fastInit;
 
     private Pointer memory;
     private int keySize;
 
-    private int flagsValue = 0;
-    private final ArrayList<Flag> flags;
+    private int flagsValue;
+    private final ArrayList<RandomXFlag> flags;
 
     /**
      * Initialize randomX cache or dataset for a specific key
      * @param key The key to initialize randomX with. (generally a hash)
      */
     public void init(byte[] key) {
-        if(flags.contains(Flag.FULL_MEM)) {
+        if(flags.contains(RandomXFlag.FULL_MEM)) {
             setDataset(key);
         } else {
             setCache(key);
@@ -111,8 +113,8 @@ public final class RandomXWrapper {
         PointerByReference newDataset;
 
         //Allocate memory for dataset
-        if(flags.contains(Flag.LARGE_PAGES)) {
-            newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(Flag.LARGE_PAGES.getValue());
+        if(flags.contains(RandomXFlag.LARGE_PAGES)) {
+            newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(RandomXFlag.LARGE_PAGES.getValue());
         } else {
             newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(0);
         }
@@ -155,7 +157,7 @@ public final class RandomXWrapper {
         RandomXJNA.INSTANCE.randomx_release_cache(cache);
         cache = null;
 
-        //If there is a old dataset release it before remplacing by the new one
+        //If there is an old dataset release it before remplacing by the new one
         if(dataset != null) {
             RandomXJNA.INSTANCE.randomx_release_dataset(dataset);
         }
@@ -167,7 +169,7 @@ public final class RandomXWrapper {
      * @param key The key to initialize randomX with. (generally a hash)
      */
     public void changeKey(byte[] key) {
-        if(flags.contains(Flag.FULL_MEM)) {
+        if(flags.contains(RandomXFlag.FULL_MEM)) {
             setDataset(key);
             for(RandomXVM vm : vms) {
                 if(vm.getPointer() != null) {
@@ -203,28 +205,6 @@ public final class RandomXWrapper {
         if(dataset != null) {
             RandomXJNA.INSTANCE.randomx_release_dataset(dataset);
             dataset = null;
-        }
-    }
-
-    public enum Flag {
-        DEFAULT(0),
-        LARGE_PAGES(1),
-        HARD_AES(2),
-        FULL_MEM(4),
-        JIT(8),
-        SECURE(16),
-        ARGON2_SSSE3(32),
-        ARGON2_AVX2(64),
-        ARGON2(96);
-
-        private final int value;
-
-        Flag(int value){
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
         }
     }
 

@@ -58,7 +58,7 @@ public class RandomXJNAPerfTest {
     @Setup(Level.Trial)
     public void setup() {
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXWrapper.Flag.JIT))
+                .flags(Lists.newArrayList(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
         randomXWrapper.init(RandomUtils.nextBytes(32));

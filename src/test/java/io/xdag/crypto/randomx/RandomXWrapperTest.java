@@ -42,7 +42,7 @@ public class RandomXWrapperTest {
         byte[] key2Bytes = key2.getBytes(StandardCharsets.UTF_8);
 
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXWrapper.Flag.JIT))
+                .flags(Lists.newArrayList(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
         randomXWrapper.init(key1Bytes);
@@ -58,7 +58,7 @@ public class RandomXWrapperTest {
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
 
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXWrapper.Flag.JIT))
+                .flags(Lists.newArrayList(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
         randomXWrapper.init(keyBytes);
@@ -74,7 +74,7 @@ public class RandomXWrapperTest {
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
 
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXWrapper.Flag.JIT))
+                .flags(Lists.newArrayList(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
         randomXWrapper.init(keyBytes);
@@ -94,7 +94,7 @@ public class RandomXWrapperTest {
     @Test
     public void testDestroy() {
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXWrapper.Flag.JIT))
+                .flags(Lists.newArrayList(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
         byte[] cache = new byte[32];

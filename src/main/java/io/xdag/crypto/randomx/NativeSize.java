@@ -26,9 +26,12 @@ package io.xdag.crypto.randomx;
 import com.sun.jna.IntegerType;
 import com.sun.jna.Native;
 
+import lombok.ToString;
+
+@ToString
 public class NativeSize extends IntegerType  {
 
-    public static int SIZE = Native.SIZE_T_SIZE;
+    public static final int SIZE = Native.SIZE_T_SIZE;
 
     public NativeSize() {
         this(0);
