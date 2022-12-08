@@ -23,17 +23,24 @@
  */
 package io.xdag.crypto.randomx;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.Builder;
 import lombok.ToString;
+import org.apache.commons.lang3.time.StopWatch;
 
 @Builder
 @ToString
@@ -44,13 +51,14 @@ public final class RandomXWrapper {
 
     final ArrayList<RandomXVM> vms = Lists.newArrayList();
 
-    boolean fastInit;
+    private boolean fastInit;
 
     private Pointer memory;
     private int keySize;
 
     private int flagsValue;
     private final ArrayList<RandomXFlag> flags;
+    private boolean isDebug;
 
     /**
      * Initialize randomX cache or dataset for a specific key
@@ -124,29 +132,54 @@ public final class RandomXWrapper {
              * If fastInit enabled use all cores to create the dataset
              * by equally distributing work between them
              */
-            ArrayList<Thread> threads = Lists.newArrayList();
-
             int threadCount = Runtime.getRuntime().availableProcessors();
             long perThread = RandomXJNA.INSTANCE.randomx_dataset_item_count().longValue() / threadCount;
             long remainder = RandomXJNA.INSTANCE.randomx_dataset_item_count().longValue() % threadCount;
+
+            ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+            ListeningExecutorService service = MoreExecutors.listeningDecorator(pool);
+            List<ListenableFuture<Long>> taskList = Lists.newArrayList();
 
             long startItem = 0;
             for (int i = 0; i < threadCount; ++i) {
                 long count = perThread + (i == threadCount - 1 ? remainder : 0);
                 long start = startItem;
-                Thread thread = new Thread(() -> RandomXJNA.INSTANCE.randomx_init_dataset(newDataset, cache, new NativeLong(start), new NativeLong(count)));
-                thread.start();
-                threads.add(thread);
+                ListenableFuture<Long> future = service.submit(() -> {
+                    StopWatch watch = StopWatch.createStarted();
+                    RandomXJNA.INSTANCE.randomx_init_dataset(newDataset, cache, new NativeLong(start), new NativeLong(count));
+                    watch.stop();
+                    return watch.getTime();
+                });
+                taskList.add(future);
                 startItem += count;
             }
 
+
+
             //wait for every thread to terminate execution (ie: dataset is initialised)
-            for(Thread thread : threads) {
-                try {
-                    thread.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            ListenableFuture<List<Long>> listFuture = Futures.successfulAsList(taskList);
+            if(isDebug) {
+                Futures.addCallback(listFuture, new FutureCallback<>() {
+                    @Override
+                    public void onSuccess(List<Long> result) {
+                        for (Long cost: result) {
+                            System.out.println("cost:" + cost);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        System.err.println(t.getMessage());
+                    }
+                }, pool);
+
+            }
+            try {
+                listFuture.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                pool.shutdown();
             }
 
         } else {
@@ -185,7 +218,6 @@ public final class RandomXWrapper {
                 }
             }
         }
-
     }
 
     /**
