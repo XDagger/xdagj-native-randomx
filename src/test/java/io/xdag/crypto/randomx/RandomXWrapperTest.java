@@ -44,7 +44,6 @@ public class RandomXWrapperTest {
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
                 .flags(Lists.newArrayList(RandomXFlag.JIT, RandomXFlag.FULL_MEM))
                 .fastInit(true)
-                .isDebug(true)
                 .build();
         randomXWrapper.init(key1Bytes);
         RandomXVM randomxVm = randomXWrapper.createVM();

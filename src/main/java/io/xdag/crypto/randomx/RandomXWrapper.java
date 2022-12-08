@@ -58,7 +58,6 @@ public final class RandomXWrapper {
 
     private int flagsValue;
     private final ArrayList<RandomXFlag> flags;
-    private boolean isDebug;
 
     /**
      * Initialize randomX cache or dataset for a specific key
@@ -158,22 +157,6 @@ public final class RandomXWrapper {
 
             //wait for every thread to terminate execution (ie: dataset is initialised)
             ListenableFuture<List<Long>> listFuture = Futures.successfulAsList(taskList);
-            if(isDebug) {
-                Futures.addCallback(listFuture, new FutureCallback<>() {
-                    @Override
-                    public void onSuccess(List<Long> result) {
-                        for (Long cost: result) {
-                            System.out.println("cost:" + cost);
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        System.err.println(t.getMessage());
-                    }
-                }, pool);
-
-            }
             try {
                 listFuture.get();
             } catch (Exception e) {
