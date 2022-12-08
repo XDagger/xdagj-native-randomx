@@ -41,7 +41,7 @@ public class RandomXVMTest {
         byte[] key1Bytes = key1.getBytes();
         byte[] key2Bytes = key2.getBytes();
 
-        int flags = INSTANCE.randomx_get_flags();
+        int flags = RandomXFlag.JIT.getValue();
 
         PointerByReference cache = INSTANCE.randomx_alloc_cache(flags);
         PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
@@ -59,7 +59,7 @@ public class RandomXVMTest {
 
     @Test
     public void testDestroy() {
-        int flags = RandomXJNA.INSTANCE.randomx_get_flags();
+        int flags = RandomXFlag.JIT.getValue();
         PointerByReference cache = INSTANCE.randomx_alloc_cache(flags);
         PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
 

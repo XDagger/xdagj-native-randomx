@@ -36,22 +36,22 @@ public class RandomXJNATest {
 
     @Test
     public void testRandomx_get_flags() {
-        int flagsValue = INSTANCE.randomx_get_flags();
-        assertNotEquals(0, flagsValue);
+        int flags = INSTANCE.randomx_get_flags();
+        assertNotEquals(0, flags);
     }
 
     @Test
     public void testRandomx_alloc_cache() {
-        int flagsValue = 0;
-        PointerByReference newCache = INSTANCE.randomx_alloc_cache(flagsValue);
+        int flags = RandomXFlag.JIT.getValue();
+        PointerByReference newCache = INSTANCE.randomx_alloc_cache(flags);
         assertNotNull("randomx alloc cache ", newCache);
     }
 
     @Test
     public void testRandomx_init_cache() {
-        int flagsValue = 0;
         int length = 32;
-        PointerByReference newCache = INSTANCE.randomx_alloc_cache(flagsValue);
+        int flags = RandomXFlag.JIT.getValue();
+        PointerByReference newCache = INSTANCE.randomx_alloc_cache(flags);
         assertNotNull("randomx alloc cache ", newCache);
 
         byte[] buffer = new byte[length];
@@ -62,9 +62,9 @@ public class RandomXJNATest {
 
     @Test
     public void testRandomx_release_cache() {
-        int flagsValue = 0;
         int length = 32;
-        PointerByReference newCache = INSTANCE.randomx_alloc_cache(flagsValue);
+        int flags = RandomXFlag.JIT.getValue();
+        PointerByReference newCache = INSTANCE.randomx_alloc_cache(flags);
         assertNotNull("randomx alloc cache ", newCache);
 
         byte[] buffer = new byte[length];
@@ -77,36 +77,36 @@ public class RandomXJNATest {
     @Test
     public void testRandomx_create_vm() {
         int length = 32;
-        int flagsValue = RandomXJNA.INSTANCE.randomx_get_flags();
-        assertNotEquals(0, flagsValue);
+        int flags = RandomXFlag.JIT.getValue();
+        assertNotEquals(0, flags);
 
-        PointerByReference cache = INSTANCE.randomx_alloc_cache(flagsValue);
-        PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flagsValue);
+        PointerByReference cache = INSTANCE.randomx_alloc_cache(flags);
+        PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
 
         byte[] buffer = new byte[length];
         Memory memory = new Memory(length);
         memory.write(0, buffer, 0, length);
         INSTANCE.randomx_init_cache(cache, memory, new NativeSize(length));
         RandomXWrapper randomXWrapper = RandomXWrapper.builder().build();
-        RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset), randomXWrapper);
+        RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flags, cache, dataset), randomXWrapper);
         assertNotNull(vm);
     }
 
     @Test
     public void testRandomx_destroy_vm() {
         int length = 32;
-        int flagsValue = RandomXJNA.INSTANCE.randomx_get_flags();
-        assertNotEquals(0, flagsValue);
+        int flags = RandomXFlag.JIT.getValue();
+        assertNotEquals(0, flags);
 
-        PointerByReference cache = INSTANCE.randomx_alloc_cache(flagsValue);
-        PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flagsValue);
+        PointerByReference cache = INSTANCE.randomx_alloc_cache(flags);
+        PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
 
         byte[] buffer = new byte[length];
         Memory memory = new Memory(length);
         memory.write(0, buffer, 0, length);
         INSTANCE.randomx_init_cache(cache, memory, new NativeSize(length));
         RandomXWrapper randomXWrapper = RandomXWrapper.builder().build();
-        RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset), randomXWrapper);
+        RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flags, cache, dataset), randomXWrapper);
         assertNotNull(vm);
 
         INSTANCE.randomx_destroy_vm(vm.getPointer());
@@ -114,7 +114,7 @@ public class RandomXJNATest {
 
     @Test
     public void testRandomx_vm_set_cache() {
-        int flags = RandomXJNA.INSTANCE.randomx_get_flags();
+        int flags = RandomXFlag.JIT.getValue();
         PointerByReference cache = INSTANCE.randomx_alloc_cache(flags);
         PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
 
@@ -131,8 +131,8 @@ public class RandomXJNATest {
         byte[] key1Bytes = key1.getBytes();
         byte[] key2Bytes = key2.getBytes();
 
-        //int flags = INSTANCE.randomx_get_flags() + RandomXWrapper.Flag.LARGE_PAGES.getValue() + RandomXWrapper.Flag.FULL_MEM.getValue();
-        int flags = INSTANCE.randomx_get_flags();
+//        int flags = INSTANCE.randomx_get_flags() + RandomXFlag.LARGE_PAGES.getValue() + RandomXFlag.FULL_MEM.getValue();
+        int flags = RandomXFlag.JIT.getValue();
 
         PointerByReference cache = INSTANCE.randomx_alloc_cache(flags);
         PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
