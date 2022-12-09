@@ -42,7 +42,7 @@ public class RandomXWrapperTest {
         byte[] key2Bytes = key2.getBytes(StandardCharsets.UTF_8);
 
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXFlag.JIT, RandomXFlag.FULL_MEM))
+                .flags(Lists.newArrayList(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
         randomXWrapper.init(key1Bytes);
