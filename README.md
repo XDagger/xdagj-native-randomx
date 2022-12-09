@@ -71,7 +71,7 @@ mvn package
 <dependency>
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-native-randomx</artifactId>
-    <version>0.1.3</version>
+    <version>0.1.4</version>
 </dependency>
 ```
 
