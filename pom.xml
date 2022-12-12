@@ -9,11 +9,11 @@
     <version>0.1.4</version>
 
     <name>xdagj-native-randomx</name>
-    <description>This a java sdk to use RandomX</description>
+    <description>A Java RandomX Library For XDAGJ</description>
     <url>https://github.com/XDagger/xdagj-native-randomx</url>
     <developers>
         <developer>
-            <name>xdagj community</name>
+            <name>xdagj_dev</name>
             <email>xdagj@xdag.io</email>
         </developer>
     </developers>
