@@ -24,8 +24,8 @@
 package io.xdag.crypto.randomx;
 
 import java.nio.charset.StandardCharsets;
-import com.google.common.collect.Lists;
-import com.google.common.io.BaseEncoding;
+import java.util.HexFormat;
+import java.util.List;
 
 public class Example {
 
@@ -35,7 +35,7 @@ public class Example {
 
         // 1. build randomx jna wrapper
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXFlag.JIT))
+                .flags(List.of(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
 
@@ -49,7 +49,8 @@ public class Example {
         byte[] hash = randomxVm.getHash(keyBytes);
 
         // 5. print result
+        HexFormat hex = HexFormat.of();
         System.out.println("message:" + key);
-        System.out.println("hash:" + BaseEncoding.base16().lowerCase().encode(hash));
+        System.out.println("hash:" + hex.formatHex(hash));
     }
 }

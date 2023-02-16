@@ -25,7 +25,6 @@ package io.xdag.crypto.randomx;
 
 import com.sun.jna.IntegerType;
 import com.sun.jna.Native;
-
 import lombok.ToString;
 
 @ToString

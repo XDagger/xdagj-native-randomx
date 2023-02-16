@@ -23,9 +23,9 @@
  */
 package io.xdag.crypto.randomx;
 
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -43,8 +43,6 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-import com.google.common.collect.Lists;
-
 @State(Scope.Benchmark)
 @Threads(value = 1)
 @BenchmarkMode({ Mode.Throughput, Mode.AverageTime})
@@ -55,19 +53,25 @@ public class RandomXJNAPerfTest {
 
     private RandomXVM randomxVm;
 
+    private final Random random = new Random();
+
     @Setup(Level.Trial)
     public void setup() {
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXFlag.JIT))
+                .flags(List.of(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
-        randomXWrapper.init(RandomUtils.nextBytes(32));
+        byte[] buffer = new byte[32];
+        random.nextBytes(buffer);
+        randomXWrapper.init(buffer);
         randomxVm = randomXWrapper.createVM();
     }
 
     @Benchmark
     public byte[] testHash() {
-        return randomxVm.getHash(RandomUtils.nextBytes(32));
+        byte[] buffer = new byte[32];
+        random.nextBytes(buffer);
+        return randomxVm.getHash(buffer);
     }
 
     @Test

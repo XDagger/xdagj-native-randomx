@@ -23,12 +23,6 @@
  */
 package io.xdag.crypto.randomx;
 
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
@@ -38,9 +32,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.ToString;
-import org.apache.commons.lang3.time.StopWatch;
 
 @Builder
 @ToString
@@ -49,7 +43,7 @@ public final class RandomXWrapper {
     private PointerByReference cache;
     private PointerByReference dataset;
 
-    final ArrayList<RandomXVM> vms = Lists.newArrayList();
+    final List<RandomXVM> vms = new ArrayList<>();
 
     private boolean fastInit;
 
@@ -57,7 +51,7 @@ public final class RandomXWrapper {
     private int keySize;
 
     private int flagsValue;
-    private final ArrayList<RandomXFlag> flags;
+    private final List<RandomXFlag> flags;
 
     /**
      * Initialize randomX cache or dataset for a specific key
@@ -135,34 +129,29 @@ public final class RandomXWrapper {
             long perThread = RandomXJNA.INSTANCE.randomx_dataset_item_count().longValue() / threadCount;
             long remainder = RandomXJNA.INSTANCE.randomx_dataset_item_count().longValue() % threadCount;
 
-            ExecutorService pool = Executors.newFixedThreadPool(threadCount);
-            ListeningExecutorService service = MoreExecutors.listeningDecorator(pool);
-            List<ListenableFuture<Long>> taskList = Lists.newArrayList();
+            ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
 
             long startItem = 0;
             for (int i = 0; i < threadCount; ++i) {
                 long count = perThread + (i == threadCount - 1 ? remainder : 0);
                 long start = startItem;
-                ListenableFuture<Long> future = service.submit(() -> {
-                    StopWatch watch = StopWatch.createStarted();
-                    RandomXJNA.INSTANCE.randomx_init_dataset(newDataset, cache, new NativeLong(start), new NativeLong(count));
-                    watch.stop();
-                    return watch.getTime();
-                });
-                taskList.add(future);
+                executorService.submit(() -> RandomXJNA.INSTANCE.randomx_init_dataset(newDataset, cache, new NativeLong(start), new NativeLong(count)));
+                startItem += count;
+            }
+
+            for (int i = 0; i < threadCount; ++i) {
+                long count = perThread + (i == threadCount - 1 ? remainder : 0);
+                long start = startItem;
+                executorService.submit(() -> RandomXJNA.INSTANCE.randomx_init_dataset(newDataset, cache, new NativeLong(start), new NativeLong(count)));
                 startItem += count;
             }
 
 
-
-            //wait for every thread to terminate execution (ie: dataset is initialised)
-            ListenableFuture<List<Long>> listFuture = Futures.successfulAsList(taskList);
+            executorService.shutdown();
             try {
-                listFuture.get();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                pool.shutdown();
+                executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
 
         } else {

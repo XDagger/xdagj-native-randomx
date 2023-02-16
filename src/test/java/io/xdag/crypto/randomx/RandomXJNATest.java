@@ -23,14 +23,17 @@
  */
 package io.xdag.crypto.randomx;
 
-import com.google.common.io.BaseEncoding;
+import static io.xdag.crypto.randomx.RandomXJNA.INSTANCE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
+import java.util.HexFormat;
 import org.junit.Test;
-import static org.junit.Assert.*;
-import static io.xdag.crypto.randomx.RandomXJNA.*;
 
 public class RandomXJNATest {
 
@@ -149,7 +152,9 @@ public class RandomXJNATest {
         RandomXVM vm = createVM(flags, cache, dataset);
         RandomXJNA.INSTANCE.randomx_calculate_hash(vm.getPointer(), msgPointer, new NativeSize(key2Bytes.length), hashPointer);
         byte[] hash = hashPointer.getByteArray(0, RandomXUtils.HASH_SIZE);
-        assertEquals("781315d3e78dc16a5060cb87677ca548d8b9aabdef5221a2851b2cc72aa2875b", BaseEncoding.base16().lowerCase().encode(hash));
+
+        HexFormat hex = HexFormat.of();
+        assertEquals("781315d3e78dc16a5060cb87677ca548d8b9aabdef5221a2851b2cc72aa2875b", hex.formatHex(hash));
         msgPointer.clear(key2Bytes.length);
         hashPointer.clear(RandomXUtils.HASH_SIZE);
     }

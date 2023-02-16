@@ -26,11 +26,9 @@ package io.xdag.crypto.randomx;
 import static org.junit.Assert.assertEquals;
 
 import java.nio.charset.StandardCharsets;
-
+import java.util.HexFormat;
+import java.util.List;
 import org.junit.Test;
-
-import com.google.common.collect.Lists;
-import com.google.common.io.BaseEncoding;
 
 public class RandomXWrapperTest {
 
@@ -42,14 +40,15 @@ public class RandomXWrapperTest {
         byte[] key2Bytes = key2.getBytes(StandardCharsets.UTF_8);
 
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXFlag.JIT))
+                .flags(List.of(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
         randomXWrapper.init(key1Bytes);
         RandomXVM randomxVm = randomXWrapper.createVM();
         byte[] hash = randomxVm.getHash(key2Bytes);
 
-        assertEquals("781315d3e78dc16a5060cb87677ca548d8b9aabdef5221a2851b2cc72aa2875b", BaseEncoding.base16().lowerCase().encode(hash));
+        HexFormat hex = HexFormat.of();
+        assertEquals("781315d3e78dc16a5060cb87677ca548d8b9aabdef5221a2851b2cc72aa2875b", hex.formatHex(hash));
     }
 
     @Test
@@ -58,14 +57,15 @@ public class RandomXWrapperTest {
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
 
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXFlag.JIT))
+                .flags(List.of(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
         randomXWrapper.init(keyBytes);
         RandomXVM randomxVm = randomXWrapper.createVM();
         byte[] hash = randomxVm.getHash(keyBytes);
 
-        assertEquals("33e17472f3f691252d1f28a2e945b990c5878f514034006df5a06a23dc1cada0", BaseEncoding.base16().lowerCase().encode(hash));
+        HexFormat hex = HexFormat.of();
+        assertEquals("33e17472f3f691252d1f28a2e945b990c5878f514034006df5a06a23dc1cada0", hex.formatHex(hash));
     }
 
     @Test
@@ -74,27 +74,28 @@ public class RandomXWrapperTest {
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
 
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXFlag.JIT))
+                .flags(List.of(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
         randomXWrapper.init(keyBytes);
         RandomXVM randomxVm = randomXWrapper.createVM();
         byte[] hash = randomxVm.getHash(keyBytes);
 
-        assertEquals("5d4155322b69284bf45fa8ac182384490a87c55a6af47b7e72558cafa8832bd9", BaseEncoding.base16().lowerCase().encode(hash));
+        HexFormat hex = HexFormat.of();
+        assertEquals("5d4155322b69284bf45fa8ac182384490a87c55a6af47b7e72558cafa8832bd9", hex.formatHex(hash));
 
         key = "world xdagj-native-randomx";
         keyBytes = key.getBytes(StandardCharsets.UTF_8);
         randomXWrapper.changeKey(key.getBytes(StandardCharsets.UTF_8));
         hash = randomxVm.getHash(keyBytes);
 
-        assertEquals("3910d7b054df9ba920e2f7e103aa2c1fc4597b13d1793f1ab08c1c9c922709c0", BaseEncoding.base16().lowerCase().encode(hash));
+        assertEquals("3910d7b054df9ba920e2f7e103aa2c1fc4597b13d1793f1ab08c1c9c922709c0", hex.formatHex(hash));
     }
 
     @Test
     public void testDestroy() {
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(Lists.newArrayList(RandomXFlag.JIT))
+                .flags(List.of(RandomXFlag.JIT))
                 .fastInit(true)
                 .build();
         byte[] cache = new byte[32];
