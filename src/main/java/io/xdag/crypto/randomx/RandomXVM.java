@@ -26,7 +26,6 @@ package io.xdag.crypto.randomx;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
-
 import lombok.Builder;
 import lombok.ToString;
 
