@@ -119,11 +119,6 @@ public class Example {
 
 JMH is a Java harness for building, running, and analysing nano/micro/milli/macro benchmarks written in Java and other languages targetting the JVM
 
-```shell
-mvn package
-java -jar target/benchmarks.jar RandomXJNAPerformance
-```
-
 result of ubuntu:
 
 ```
