@@ -26,7 +26,6 @@ package io.xdag.crypto.randomx;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Level;
@@ -74,8 +73,7 @@ public class RandomXJNAPerfTest {
         return randomxVm.getHash(buffer);
     }
 
-    @Test
-    public void main() throws RunnerException {
+    public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(RandomXJNAPerfTest.class.getSimpleName())
                 .build();
