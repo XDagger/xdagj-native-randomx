@@ -37,6 +37,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
@@ -76,6 +77,8 @@ public class RandomXJNAPerfTest {
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(RandomXJNAPerfTest.class.getSimpleName())
+                .result("result.json")
+                .resultFormat(ResultFormatType.JSON)
                 .build();
         new Runner(opt).run();
     }
