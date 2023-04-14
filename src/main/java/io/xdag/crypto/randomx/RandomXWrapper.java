@@ -71,6 +71,9 @@ public final class RandomXWrapper {
      * @return RandomX_VM an Object representing the resulting VM
      */
     public RandomXVM createVM() {
+        if (flags.contains(RandomXFlag.JIT)){
+            flagsValue = RandomXFlag.JIT.getValue();
+        }
         RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset), this);
         vms.add(vm);
         return vm;
@@ -83,7 +86,9 @@ public final class RandomXWrapper {
     private void setCache(byte[] key) {
         if(this.memory != null && Arrays.equals(key, this.memory.getByteArray(0, keySize)))
             return;
-
+        if (flags.contains(RandomXFlag.JIT)){
+            flagsValue = RandomXFlag.JIT.getValue();
+        }
         PointerByReference newCache = RandomXJNA.INSTANCE.randomx_alloc_cache(flagsValue);
 
         this.memory = new Memory(key.length);
@@ -116,6 +121,8 @@ public final class RandomXWrapper {
         //Allocate memory for dataset
         if(flags.contains(RandomXFlag.LARGE_PAGES)) {
             newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(RandomXFlag.LARGE_PAGES.getValue());
+        } else if (flags.contains(RandomXFlag.JIT)){
+            newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(RandomXFlag.JIT.getValue());
         } else {
             newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(0);
         }
