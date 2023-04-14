@@ -37,28 +37,19 @@ cd xdagj-native-randomx
 git submodule init
 git submodule update
 ```
-### 2.2 compile randomx lib 
+### 2.2 compile randomx lib
 
-#### 2.2.1 change cmake setting
-
+#### 2.2.1 compile randomx share lib
 ```
 cd randomx
-vim CMakeLists.txt
-```
-modify CMakeList.txt in randomx folder.
-change "add_library(randomx ${randomx_sources})" at line 178 to
-"add_library(randomx SHARED ${randomx_sources})"
-
-#### 2.2.2 compile c++ lib
-```
 mkdir build && cd build
-cmake -DARCH=native ..
+cmake .. -DARCH=native -DBUILD_SHARED_LIBS=ON -DCMAKE_C_FLAGS="-fPIC"
 make
 cp -i librandomx.dylib ../../src/main/resources
 overwrite ../../src/main/resources/librandomx.dylib? (y/n [n]) y
 ```
 
-#### 2.2.3 compile java lib
+#### 2.2.2 compile java lib
 
 ```
 cd ../../
