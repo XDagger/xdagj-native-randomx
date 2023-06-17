@@ -113,15 +113,15 @@ JMH is a Java harness for building, running, and analysing nano/micro/milli/macr
 result of ubuntu:
 
 ```
-system ：Ubuntu 22.04.1 LTS
-CPU    ：Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz   2.60 GHz
-RAM    ：32.0 GB
+system ：macOS 13.3.1
+CPU    ：Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+RAM    ：16 GB 2667 MHz DDR4
 ```
 
 |           Benchmark            | Mode  | Cnt  | Score  |  Error  | Units |
 | :----------------------------: | :---: | :--: | :----: | :-----: | :---: |
-| RandomXJNAPerformance.testHash | thrpt |  25  | 35.683 | ± 1.081 | ops/s |
-| RandomXJNAPerformance.testHash | avgt  |  25  | 0.027  | ± 0.001 | s/op  |
+| RandomXJNAPerformance.testHash | thrpt |  25  | 70.130 | ± 2.128 | ops/s |
+| RandomXJNAPerformance.testHash | avgt  |  25  | 0.015  | ± 0.001 | s/op  |
 
 
 
