@@ -24,13 +24,14 @@
 package io.xdag.crypto.randomx;
 
 import static io.xdag.crypto.randomx.RandomXJNA.INSTANCE;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
 import com.sun.jna.ptr.PointerByReference;
 import java.util.HexFormat;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 public class RandomXVMTest {
 

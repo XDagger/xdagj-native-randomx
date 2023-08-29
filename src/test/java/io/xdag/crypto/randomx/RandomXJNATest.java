@@ -24,16 +24,17 @@
 package io.xdag.crypto.randomx;
 
 import static io.xdag.crypto.randomx.RandomXJNA.INSTANCE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 import java.util.HexFormat;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 public class RandomXJNATest {
 
@@ -47,7 +48,7 @@ public class RandomXJNATest {
     public void testRandomx_alloc_cache() {
         int flags = RandomXFlag.JIT.getValue();
         PointerByReference newCache = INSTANCE.randomx_alloc_cache(flags);
-        assertNotNull("randomx alloc cache ", newCache);
+        assertNotNull(newCache,"randomx alloc cache ");
     }
 
     @Test
@@ -55,7 +56,7 @@ public class RandomXJNATest {
         int length = 32;
         int flags = RandomXFlag.JIT.getValue();
         PointerByReference newCache = INSTANCE.randomx_alloc_cache(flags);
-        assertNotNull("randomx alloc cache ", newCache);
+        assertNotNull(newCache, "randomx alloc cache ");
 
         byte[] buffer = new byte[length];
         Memory memory = new Memory(length);
@@ -68,7 +69,7 @@ public class RandomXJNATest {
         int length = 32;
         int flags = RandomXFlag.JIT.getValue();
         PointerByReference newCache = INSTANCE.randomx_alloc_cache(flags);
-        assertNotNull("randomx alloc cache ", newCache);
+        assertNotNull(newCache, "randomx alloc cache ");
 
         byte[] buffer = new byte[length];
         Memory memory = new Memory(length);

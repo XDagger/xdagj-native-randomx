@@ -29,9 +29,9 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <jna.version>5.13.0</jna.version>
-        <lombok.version>1.18.26</lombok.version>
-        <junit.version>4.13.2</junit.version>
-        <jmh.version>1.36</jmh.version>
+        <lombok.version>1.18.28</lombok.version>
+        <junit.version>5.10.0</junit.version>
+        <jmh.version>1.37</jmh.version>
     </properties>
 
     <organization>
@@ -212,8 +212,8 @@
         </dependency>
 
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
