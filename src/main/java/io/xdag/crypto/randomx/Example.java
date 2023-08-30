@@ -35,12 +35,14 @@ public class Example {
 
         // 1. build randomx jna wrapper
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(List.of(RandomXFlag.JIT))
-                .fastInit(true)
+                .flags(List.of(RandomXFlag.JIT, RandomXFlag.HARD_AES, RandomXFlag.ARGON2))
+                .fastInit(false)
+                .miningMode(false)
                 .build();
 
+        byte[] seed = new byte[]{(byte)1, (byte)2, (byte)3, (byte)4};
         // 2. init dataset or cache
-        randomXWrapper.init(keyBytes);
+        randomXWrapper.init(seed);
 
         // 3. create randomxVm
         RandomXVM randomxVm = randomXWrapper.createVM();
