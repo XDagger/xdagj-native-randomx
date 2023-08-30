@@ -162,18 +162,34 @@ public class RandomXJNATest {
 
     @Test
     public void testRandomx_alloc_dataset() {
+        PointerByReference cache = INSTANCE.randomx_alloc_cache(0);
+        assertNotNull(cache);
+        INSTANCE.randomx_release_cache(cache);
     }
 
     @Test
     public void testRandomx_init_dataset() {
+        int flags = RandomXFlag.JIT.getValue();
+        byte[] seed = new byte[]{(byte)1, (byte)2, (byte)3, (byte)4};
+        Memory memory = new Memory(seed.length);
+        memory.write(0, seed, 0, seed.length);
+        PointerByReference cache = INSTANCE.randomx_alloc_cache(flags);
+        PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
+        INSTANCE.randomx_init_cache(cache, memory, new NativeSize(seed.length));
+        INSTANCE.randomx_init_dataset(dataset, cache, new NativeLong(0), RandomXJNA.INSTANCE.randomx_dataset_item_count());
+
+        INSTANCE.randomx_release_cache(cache);
+        INSTANCE.randomx_release_dataset(dataset);
     }
 
     @Test
     public void testRandomx_vm_set_dataset() {
+
     }
 
     @Test
     public void testRandomx_dataset_item_count() {
+        assertNotNull(RandomXJNA.INSTANCE.randomx_dataset_item_count());
     }
 
     @Test
