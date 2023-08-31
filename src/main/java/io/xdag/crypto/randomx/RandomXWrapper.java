@@ -98,6 +98,10 @@ public final class RandomXWrapper {
 
         Pointer newCache = RandomXJNA.INSTANCE.randomx_alloc_cache(flagsValue);
 
+        if(newCache == null) {
+            throw new RuntimeException("alloc cache error.");
+        }
+
         this.memory = new Memory(key.length);
         this.memory.write(0, key, 0, key.length);
         keySize = key.length;
@@ -122,6 +126,10 @@ public final class RandomXWrapper {
 
         //Allocate memory for dataset
         Pointer newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flagsValue);
+
+        if(newDataset == null) {
+            throw new RuntimeException("alloc dataset error.");
+        }
 
         if(fastInit) {
             /*
