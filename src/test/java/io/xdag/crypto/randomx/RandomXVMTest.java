@@ -28,7 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
-import com.sun.jna.ptr.PointerByReference;
+import com.sun.jna.Pointer;
+
 import java.util.HexFormat;
 
 import org.junit.jupiter.api.Test;
@@ -44,8 +45,8 @@ public class RandomXVMTest {
 
         int flags = RandomXFlag.JIT.getValue();
 
-        PointerByReference cache = INSTANCE.randomx_alloc_cache(flags);
-        PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
+        Pointer cache = INSTANCE.randomx_alloc_cache(flags);
+        Pointer dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
 
         Memory memory = new Memory(key1Bytes.length);
         memory.write(0, key1Bytes, 0, key1Bytes.length);
@@ -62,14 +63,14 @@ public class RandomXVMTest {
     @Test
     public void testDestroy() {
         int flags = RandomXFlag.JIT.getValue();
-        PointerByReference cache = INSTANCE.randomx_alloc_cache(flags);
-        PointerByReference dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
+        Pointer cache = INSTANCE.randomx_alloc_cache(flags);
+        Pointer dataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flags);
 
         RandomXVM vm = createVM(flags, cache, dataset);
         vm.destroy();
     }
 
-    private RandomXVM createVM(int flags, PointerByReference cache, PointerByReference dataset) {
+    private RandomXVM createVM(int flags, Pointer cache, Pointer dataset) {
         return new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flags, cache, dataset), null);
     }
 

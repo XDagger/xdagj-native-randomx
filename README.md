@@ -62,7 +62,7 @@ mvn package
 <dependency>
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-native-randomx</artifactId>
-    <version>0.1.6</version>
+    <version>0.1.7</version>
 </dependency>
 ```
 
@@ -77,25 +77,26 @@ import java.util.List;
 
 public class Example {
 
-    public static void main(String[] args) {
         String key = "hello xdagj-native-randomx";
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
-
+    
         // 1. build randomx jna wrapper
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(List.of(RandomXFlag.JIT))
-                .fastInit(true)
+                .flags(List.of(RandomXFlag.JIT, RandomXFlag.HARD_AES, RandomXFlag.ARGON2))
+                .fastInit(false)
+                .miningMode(false)
                 .build();
-
+    
+        byte[] seed = new byte[]{(byte)1, (byte)2, (byte)3, (byte)4};
         // 2. init dataset or cache
-        randomXWrapper.init(keyBytes);
-
+            randomXWrapper.init(seed);
+    
         // 3. create randomxVm
         RandomXVM randomxVm = randomXWrapper.createVM();
-
+    
         // 4. calculate hash
         byte[] hash = randomxVm.getHash(keyBytes);
-
+    
         // 5. print result
         HexFormat hex = HexFormat.of();
         System.out.println("message:" + key);
@@ -119,8 +120,8 @@ RAM    ：16 GB 2667 MHz DDR4
 ```
 
 |           Benchmark            | Mode  | Cnt  | Score  |  Error  | Units |
-| :----------------------------: | :---: | :--: | :----: | :-----: | :---: |
-| RandomXJNAPerformance.testHash | thrpt |  25  | 70.130 | ± 2.128 | ops/s |
+| :----------------------------: | :---: | :--: |:------:| :-----: | :---: |
+| RandomXJNAPerformance.testHash | thrpt |  25  | 75.130 | ± 2.128 | ops/s |
 | RandomXJNAPerformance.testHash | avgt  |  25  | 0.015  | ± 0.001 | s/op  |
 
 

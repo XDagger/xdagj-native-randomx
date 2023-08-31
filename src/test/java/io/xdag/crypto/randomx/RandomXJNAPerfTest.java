@@ -58,8 +58,9 @@ public class RandomXJNAPerfTest {
     @Setup(Level.Trial)
     public void setup() {
         RandomXWrapper randomXWrapper = RandomXWrapper.builder()
-                .flags(List.of(RandomXFlag.JIT))
+                .flags(List.of(RandomXFlag.JIT, RandomXFlag.HARD_AES, RandomXFlag.ARGON2))
                 .fastInit(true)
+                .miningMode(false)
                 .build();
         byte[] buffer = new byte[32];
         random.nextBytes(buffer);

@@ -26,7 +26,6 @@ package io.xdag.crypto.randomx;
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,12 +39,13 @@ import lombok.ToString;
 @ToString
 public final class RandomXWrapper {
 
-    private PointerByReference cache;
-    private PointerByReference dataset;
+    private Pointer cache;
+    private Pointer dataset;
 
     final List<RandomXVM> vms = new ArrayList<>();
 
     private boolean fastInit;
+    private boolean miningMode;
 
     private Pointer memory;
     private int keySize;
@@ -58,10 +58,10 @@ public final class RandomXWrapper {
      * @param key The key to initialize randomX with. (generally a hash)
      */
     public void init(byte[] key) {
-        if(flags.contains(RandomXFlag.FULL_MEM)) {
+        setCache(key);
+        if(miningMode) {
+            //Initialized cache is required to create dataset, first initialize it
             setDataset(key);
-        } else {
-            setCache(key);
         }
     }
 
@@ -71,10 +71,19 @@ public final class RandomXWrapper {
      * @return RandomX_VM an Object representing the resulting VM
      */
     public RandomXVM createVM() {
-        if (flags.contains(RandomXFlag.JIT)){
-            flagsValue = RandomXFlag.JIT.getValue();
+        if(flags.isEmpty()) {
+            flagsValue = RandomXJNA.INSTANCE.randomx_get_flags();
+        } else {
+            for (RandomXFlag flag : flags) {
+                flagsValue += flag.getValue();
+            }
+
         }
-        RandomXVM vm = new RandomXVM(RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset), this);
+        Pointer pointer = RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset);
+        if(pointer == null) {
+            throw new RuntimeException("create randomx vm error.");
+        }
+        RandomXVM vm = new RandomXVM(pointer, this);
         vms.add(vm);
         return vm;
     }
@@ -86,10 +95,12 @@ public final class RandomXWrapper {
     private void setCache(byte[] key) {
         if(this.memory != null && Arrays.equals(key, this.memory.getByteArray(0, keySize)))
             return;
-        if (flags.contains(RandomXFlag.JIT)){
-            flagsValue = RandomXFlag.JIT.getValue();
+
+        Pointer newCache = RandomXJNA.INSTANCE.randomx_alloc_cache(flagsValue);
+
+        if(newCache == null) {
+            throw new RuntimeException("alloc cache error.");
         }
-        PointerByReference newCache = RandomXJNA.INSTANCE.randomx_alloc_cache(flagsValue);
 
         this.memory = new Memory(key.length);
         this.memory.write(0, key, 0, key.length);
@@ -113,18 +124,11 @@ public final class RandomXWrapper {
             return;
         }
 
-        //Initialized cache is required to create dataset, first initialize it
-        setCache(key);
-
-        PointerByReference newDataset;
-
         //Allocate memory for dataset
-        if(flags.contains(RandomXFlag.LARGE_PAGES)) {
-            newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(RandomXFlag.LARGE_PAGES.getValue());
-        } else if (flags.contains(RandomXFlag.JIT)){
-            newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(RandomXFlag.JIT.getValue());
-        } else {
-            newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(0);
+        Pointer newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flagsValue);
+
+        if(newDataset == null) {
+            throw new RuntimeException("alloc dataset error.");
         }
 
         if(fastInit) {
@@ -181,20 +185,19 @@ public final class RandomXWrapper {
      * @param key The key to initialize randomX with. (generally a hash)
      */
     public void changeKey(byte[] key) {
-        if(flags.contains(RandomXFlag.FULL_MEM)) {
+        setCache(key);
+        for(RandomXVM vm : vms) {
+            if(vm.getPointer() != null) {
+                RandomXJNA.INSTANCE.randomx_vm_set_cache(vm.getPointer(), cache);
+            }
+        }
+        if(miningMode) {
             setDataset(key);
             for(RandomXVM vm : vms) {
                 if(vm.getPointer() != null) {
                     RandomXJNA.INSTANCE.randomx_vm_set_dataset(vm.getPointer(), dataset);
                 }
 
-            }
-        } else {
-            setCache(key);
-            for(RandomXVM vm : vms) {
-                if(vm.getPointer() != null) {
-                    RandomXJNA.INSTANCE.randomx_vm_set_cache(vm.getPointer(), cache);
-                }
             }
         }
     }

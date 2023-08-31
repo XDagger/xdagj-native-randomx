@@ -25,7 +25,6 @@ package io.xdag.crypto.randomx;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
 import lombok.Builder;
 import lombok.ToString;
 
@@ -36,7 +35,7 @@ import lombok.ToString;
 @ToString
 public final class RandomXVM {
 
-    PointerByReference pointer;
+    Pointer pointer;
     RandomXWrapper parent;
 
     /**
@@ -45,21 +44,20 @@ public final class RandomXVM {
      * @return the resulting hash
      */
     public synchronized byte[] getHash(byte[] message) {
-        Pointer msgPointer = new Memory(message.length);
+        Memory msgPointer = new Memory(message.length);
         msgPointer.write(0, message, 0, message.length);
 
-        Pointer hashPointer = new Memory(RandomXUtils.HASH_SIZE);
+        Memory hashPointer = new Memory(RandomXUtils.HASH_SIZE);
         RandomXJNA.INSTANCE.randomx_calculate_hash(pointer, msgPointer, new NativeSize(message.length), hashPointer);
 
         byte[] hash = hashPointer.getByteArray(0, RandomXUtils.HASH_SIZE);
 
         msgPointer.clear(message.length);
         hashPointer.clear(RandomXUtils.HASH_SIZE);
-
         return hash;
     }
 
-    PointerByReference getPointer() {
+    Pointer getPointer() {
         return pointer;
     }
 
