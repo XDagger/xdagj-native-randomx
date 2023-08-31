@@ -26,7 +26,6 @@ package io.xdag.crypto.randomx;
 import com.sun.jna.Library;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
 
 /**
  * RandomX JNA Interface
@@ -37,28 +36,28 @@ public interface RandomXJNA extends Library {
 
     int randomx_get_flags();
 
-    PointerByReference randomx_alloc_cache(int flags);
+    Pointer randomx_alloc_cache(int flags);
 
-    void randomx_init_cache(PointerByReference cache, Pointer key, NativeSize keySize);
+    void randomx_init_cache(Pointer cache, Pointer key, NativeSize keySize);
 
-    void randomx_release_cache(PointerByReference cache);
+    void randomx_release_cache(Pointer cache);
 
-    PointerByReference randomx_create_vm(int flags, PointerByReference cache, PointerByReference dataset);
+    Pointer randomx_create_vm(int flags, Pointer cache, Pointer dataset);
 
-    void randomx_destroy_vm(PointerByReference machine);
+    void randomx_destroy_vm(Pointer machine);
 
-    void randomx_vm_set_cache(PointerByReference machine, PointerByReference cache);
+    void randomx_vm_set_cache(Pointer machine, Pointer cache);
 
-    void randomx_calculate_hash(PointerByReference machine, Pointer input, NativeSize inputSize, Pointer output);
+    void randomx_calculate_hash(Pointer machine, Pointer input, NativeSize inputSize, Pointer output);
 
-    PointerByReference randomx_alloc_dataset(int flags);
+    Pointer randomx_alloc_dataset(int flags);
 
-    void randomx_init_dataset(PointerByReference dataset, PointerByReference cache, NativeLong startItem, NativeLong itemCount);
+    void randomx_init_dataset(Pointer dataset, Pointer cache, NativeLong startItem, NativeLong itemCount);
 
-    void randomx_vm_set_dataset(PointerByReference machine, PointerByReference dataset);
+    void randomx_vm_set_dataset(Pointer machine, Pointer dataset);
 
     NativeLong randomx_dataset_item_count();
 
-    void randomx_release_dataset(PointerByReference dataset);
+    void randomx_release_dataset(Pointer dataset);
 
 }

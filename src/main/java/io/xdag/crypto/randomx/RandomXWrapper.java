@@ -26,7 +26,6 @@ package io.xdag.crypto.randomx;
 import com.sun.jna.Memory;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,8 +39,8 @@ import lombok.ToString;
 @ToString
 public final class RandomXWrapper {
 
-    private PointerByReference cache;
-    private PointerByReference dataset;
+    private Pointer cache;
+    private Pointer dataset;
 
     final List<RandomXVM> vms = new ArrayList<>();
 
@@ -80,7 +79,7 @@ public final class RandomXWrapper {
             }
 
         }
-        PointerByReference pointer = RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset);
+        Pointer pointer = RandomXJNA.INSTANCE.randomx_create_vm(flagsValue, cache, dataset);
         if(pointer == null) {
             throw new RuntimeException("create randomx vm error.");
         }
@@ -97,7 +96,7 @@ public final class RandomXWrapper {
         if(this.memory != null && Arrays.equals(key, this.memory.getByteArray(0, keySize)))
             return;
 
-        PointerByReference newCache = RandomXJNA.INSTANCE.randomx_alloc_cache(flagsValue);
+        Pointer newCache = RandomXJNA.INSTANCE.randomx_alloc_cache(flagsValue);
 
         this.memory = new Memory(key.length);
         this.memory.write(0, key, 0, key.length);
@@ -122,7 +121,7 @@ public final class RandomXWrapper {
         }
 
         //Allocate memory for dataset
-        PointerByReference newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flagsValue);
+        Pointer newDataset = RandomXJNA.INSTANCE.randomx_alloc_dataset(flagsValue);
 
         if(fastInit) {
             /*
