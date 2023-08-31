@@ -52,8 +52,8 @@ public final class RandomXVM {
 
         byte[] hash = hashPointer.getByteArray(0, RandomXUtils.HASH_SIZE);
 
-        msgPointer.close();
-        hashPointer.close();
+        msgPointer.clear(message.length);
+        hashPointer.clear(RandomXUtils.HASH_SIZE);
         return hash;
     }
 

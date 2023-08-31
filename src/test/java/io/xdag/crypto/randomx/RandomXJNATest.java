@@ -65,7 +65,6 @@ public class RandomXJNATest {
 
         INSTANCE.randomx_init_cache(newCache, memory, new NativeSize(length));
         INSTANCE.randomx_release_cache(newCache);
-        memory.close();
     }
 
     @Test
@@ -81,7 +80,6 @@ public class RandomXJNATest {
 
         INSTANCE.randomx_init_cache(newCache, memory, new NativeSize(length));
         INSTANCE.randomx_release_cache(newCache);
-        memory.close();
     }
 
     @Test
@@ -104,7 +102,6 @@ public class RandomXJNATest {
         INSTANCE.randomx_release_cache(cache);
         INSTANCE.randomx_release_dataset(dataset);
         INSTANCE.randomx_destroy_vm(vm.getPointer());
-        memory.close();
     }
 
     @Test
@@ -127,7 +124,6 @@ public class RandomXJNATest {
         INSTANCE.randomx_release_cache(cache);
         INSTANCE.randomx_release_dataset(dataset);
         INSTANCE.randomx_destroy_vm(vm.getPointer());
-        memory.close();
     }
 
     @Test
@@ -178,8 +174,6 @@ public class RandomXJNATest {
         INSTANCE.randomx_release_cache(cache);
         INSTANCE.randomx_release_dataset(dataset);
         INSTANCE.randomx_destroy_vm(vm.getPointer());
-        msgPointer.close();
-        hashPointer.close();
     }
 
     @Test
@@ -200,7 +194,6 @@ public class RandomXJNATest {
         INSTANCE.randomx_init_cache(cache, memory, new NativeSize(seed.length));
         INSTANCE.randomx_init_dataset(dataset, cache, new NativeLong(0), RandomXJNA.INSTANCE.randomx_dataset_item_count());
 
-        memory.close();
         INSTANCE.randomx_release_cache(cache);
         INSTANCE.randomx_release_dataset(dataset);
     }
