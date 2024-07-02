@@ -85,3 +85,34 @@ jobs:
         with:
           name: xdagj-native-randomx.jar
           path: target/xdagj-native-randomx-*.jar
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build-java
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: xdagj-native-randomx.jar
+          path: ./jar
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./jar/xdagj-native-randomx-*.jar
+          asset_name: xdagj-native-randomx.jar
+          asset_content_type: application/java-archive
