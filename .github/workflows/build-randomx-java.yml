@@ -1,0 +1,79 @@
+name: Build randomx and java
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-randomx:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            cmake_args: '-DARCH=native -DBUILD_SHARED_LIBS=ON -DCMAKE_C_FLAGS="-fPIC"'
+            artifact_name: 'librandomx.so'
+          - os: windows-latest
+            cmake_args: '-G "MinGW Makefiles" -DARCH=native -DBUILD_SHARED_LIBS=ON'
+            artifact_name: 'randomx.dll'
+          - os: macos-latest
+            cmake_args: '-DARCH=native -DBUILD_SHARED_LIBS=ON'
+            artifact_name: 'librandomx.dylib'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y cmake build-essential
+          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            brew install cmake
+          fi
+
+      - name: Compile RandomX
+        run: |
+          cd randomx
+          mkdir build && cd build
+          cmake .. ${{ matrix.cmake_args }}
+          make
+          cp librandomx* ../../src/main/resources
+
+      - name: Archive artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: src/main/resources/${{ matrix.artifact_name }}
+
+  build-java:
+    runs-on: ubuntu-latest
+    needs: build-randomx
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download RandomX artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: librandomx.so
+          path: src/main/resources
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build with Maven
+        run: mvn clean package
+
+      - name: Archive Java artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: xdagj-native-randomx.jar
+          path: target/xdagj-native-randomx-*.jar
