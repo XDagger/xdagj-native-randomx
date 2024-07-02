@@ -25,7 +25,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          submodule: true
+          submodules: true
 
       - name: Install dependencies
         run: |
@@ -59,7 +59,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          submodule: true
+          submodules: true
 
       - name: Download RandomX artifacts
         uses: actions/download-artifact@v2
