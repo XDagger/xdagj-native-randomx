@@ -1,4 +1,5 @@
 name: build-randomx-java
+
 on:
   push:
     tags:
@@ -27,16 +28,19 @@ jobs:
         with:
           submodules: true
 
-      - name: Install dependencies
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            sudo apt-get update
-            sudo apt-get install -y cmake build-essential
-          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            brew install cmake
-          fi
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install cmake
 
       - name: Compile RandomX
         run: |
@@ -72,7 +76,12 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: maven
 
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
+        run: mvn clean package
+
+      - name: Archive Java artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: xdagj-native-randomx.jar
+          path: target/xdagj-native-randomx-*.jar
