@@ -51,13 +51,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             sudo apt-get update && sudo apt-get install -y cmake build-essential
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
             brew install cmake
-          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
             choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
           fi
+        shell: bash
 
       - name: Compile RandomX
         run: |
