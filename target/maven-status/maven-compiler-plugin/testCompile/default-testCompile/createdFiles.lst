@@ -1,0 +1,13 @@
+META-INF/CompilerHints
+io/xdag/crypto/randomx/RandomXJNALoaderTest.class
+io/xdag/crypto/randomx/jmh_generated/RandomXJNAPerfTest_jmhType_B3.class
+io/xdag/crypto/randomx/jmh_generated/RandomXJNAPerfTest_jmhType_B1.class
+io/xdag/crypto/randomx/RandomXJNAPerfTest.class
+io/xdag/crypto/randomx/RandomXDatasetTest.class
+io/xdag/crypto/randomx/jmh_generated/RandomXJNAPerfTest_jmhType_B2.class
+io/xdag/crypto/randomx/RandomXCacheTest.class
+io/xdag/crypto/randomx/jmh_generated/RandomXJNAPerfTest_testCalculateHash_jmhTest.class
+META-INF/BenchmarkList
+io/xdag/crypto/randomx/RandomXTemplateTest.class
+io/xdag/crypto/randomx/jmh_generated/RandomXJNAPerfTest_jmhType.class
+io/xdag/crypto/randomx/RandomXVMTest.class

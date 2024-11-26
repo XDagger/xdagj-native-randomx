@@ -1,0 +1,10 @@
+io/xdag/crypto/randomx/RandomXTemplate$RandomXTemplateBuilder.class
+io/xdag/crypto/randomx/RandomXCache.class
+io/xdag/crypto/randomx/RandomXTemplate.class
+io/xdag/crypto/randomx/RandomXJNALoader.class
+io/xdag/crypto/randomx/RandomXFlag.class
+io/xdag/crypto/randomx/RandomXUtils.class
+io/xdag/crypto/randomx/RandomXJNA.class
+io/xdag/crypto/randomx/RandomXVM.class
+io/xdag/crypto/randomx/RandomXDataset.class
+io/xdag/crypto/randomx/Example.class

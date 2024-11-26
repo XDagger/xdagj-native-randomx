@@ -1,0 +1,2 @@
+JMH S 41 io.xdag.crypto.randomx.RandomXJNAPerfTest S 81 io.xdag.crypto.randomx.jmh_generated.RandomXJNAPerfTest_testCalculateHash_jmhTest S 17 testCalculateHash S 10 Throughput I 1 1 A 1 1 1 E I 1 1 T 4 10 s E I 1 5 T 4 10 s E E E E E E E E U 7 SECONDS E E 
+JMH S 41 io.xdag.crypto.randomx.RandomXJNAPerfTest S 81 io.xdag.crypto.randomx.jmh_generated.RandomXJNAPerfTest_testCalculateHash_jmhTest S 17 testCalculateHash S 11 AverageTime I 1 1 A 1 1 1 E I 1 1 T 4 10 s E I 1 5 T 4 10 s E E E E E E E E U 7 SECONDS E E 

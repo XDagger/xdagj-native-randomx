@@ -1,0 +1,57 @@
+/Users/reymondtu/.jenv/versions/kona64-21.0.5/bin/javadoc
+@options
+@packages
+-classpath
+'/Users/reymondtu/.m2/repository/net/java/dev/jna/jna/5.15.0/jna-5.15.0.jar:/Users/reymondtu/.m2/repository/org/projectlombok/lombok/1.18.34/lombok-1.18.34.jar'
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'/Users/reymondtu/dev/github/xdagj-native-randomx/src/main/java:/Users/reymondtu/dev/github/xdagj-native-randomx/target/generated-sources/annotations'
+-author
+-bottom
+'Copyright &#169; 2024 <a href="https://xdag.io">Xdag Foundation</a>. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'xdagj-native-randomx 0.1.8 API'
+-use
+-version
+-windowtitle
+'xdagj-native-randomx 0.1.8 API'
+io.xdag.crypto.randomx
+io.xdag.crypto.randomx
+io.xdag.crypto.randomx
+io.xdag.crypto.randomx
+io.xdag.crypto.randomx
+io.xdag.crypto.randomx
+io.xdag.crypto.randomx
+io.xdag.crypto.randomx
+io.xdag.crypto.randomx
+/Users/reymondtu/.m2/repository/net/java/dev/jna/jna/5.15.0/jna-5.15.0.jar = 1726415684000
+/Users/reymondtu/.m2/repository/org/projectlombok/lombok/1.18.34/lombok-1.18.34.jar = 1719535552000
+/Users/reymondtu/dev/github/xdagj-native-randomx/src/main/java = 1732527943219
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/generated-sources/annotations = 1732592273337
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/tag-search-index.js = 1732592326584
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/overview-tree.html = 1732592326576
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/module-search-index.js = 1732592326583
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/index.html = 1732592326592
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/package-search-index.js = 1732592326583
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/link.svg = 1732592326595
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/index-all.html = 1732592326591
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/allpackages-index.html = 1732592326583
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/member-search-index.js = 1732592326584
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/copy.svg = 1732592326595
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/script.js = 1732592326595
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/stylesheet.css = 1732592326594
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/search-page.js = 1732592326596
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/help-doc.html = 1732592326593
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/element-list = 1732592326555
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/search.html = 1732592326592
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/allclasses-index.html = 1732592326582
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/type-search-index.js = 1732592326584
+/Users/reymondtu/dev/github/xdagj-native-randomx/target/apidocs/search.js = 1732592326596
