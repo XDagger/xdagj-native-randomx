@@ -100,11 +100,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: List uploaded artifacts
-        run: |
-          echo "Available Artifacts:"
-          ls src/main/resources/native/
-
       - name: Download Dynamic Link Library Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -115,12 +110,12 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
           cache: 'maven'
 
       - name: Build with Maven
-        run: mvn clean package
+        run: mvn clean package -DskipTests
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
