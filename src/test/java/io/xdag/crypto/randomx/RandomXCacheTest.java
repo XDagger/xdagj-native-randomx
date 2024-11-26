@@ -31,23 +31,17 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for RandomXVM.
+ * Tests for RandomXCache.
  */
-public class RandomXVMTest {
+public class RandomXCacheTest {
 
     @Test
-    public void testVMHashCalculation() {
+    public void testCacheAllocationAndRelease() {
         Set<RandomXFlag> flags = EnumSet.of(RandomXFlag.DEFAULT);
         byte[] key = "test_key".getBytes();
-        byte[] input = "test_input".getBytes();
-        byte[] output = new byte[32];
 
-        try (RandomXCache cache = new RandomXCache(flags, key);
-             RandomXVM vm = new RandomXVM(flags, cache, null)) {
-
-            vm.calculateHash(input, output);
-            assertNotNull(output, "Output should not be null.");
-            assertEquals(32, output.length, "Output size should be 32 bytes.");
-        }
+        try (RandomXCache cache = new RandomXCache(flags, key)) {
+            assertNotNull(cache.getCachePointer(), "Cache pointer should not be null.");
+        } // Cache is automatically released here.
     }
 }

@@ -23,20 +23,32 @@
  */
 package io.xdag.crypto.randomx;
 
-import com.sun.jna.IntegerType;
-import com.sun.jna.Native;
-import lombok.ToString;
+import org.junit.jupiter.api.Test;
 
-@ToString
-public class NativeSize extends IntegerType  {
+import java.util.EnumSet;
+import java.util.Set;
 
-    public static final int SIZE = Native.SIZE_T_SIZE;
+import static org.junit.jupiter.api.Assertions.*;
 
-    public NativeSize() {
-        this(0);
-    }
+/**
+ * Tests for RandomXDataset with multi-threaded initialization based on CPU cores.
+ */
+public class RandomXDatasetTest {
 
-    public NativeSize(long value) {
-        super(SIZE, value);
+    @Test
+    public void testDatasetInitializationWithDynamicThreads() {
+        Set<RandomXFlag> flags = EnumSet.of(RandomXFlag.DEFAULT);
+        byte[] key = "test_key".getBytes();
+
+        try (RandomXCache cache = new RandomXCache(flags, key);
+             RandomXDataset dataset = new RandomXDataset(flags)) {
+
+            long startTime = System.currentTimeMillis();
+            dataset.initDataset(cache.getCachePointer()); // Dynamically adjusts thread count
+            long elapsedTime = System.currentTimeMillis() - startTime;
+
+            System.out.println("Dataset initialized in " + elapsedTime + " ms.");
+            assertNotNull(dataset.getPointer(), "Dataset pointer should not be null.");
+        }
     }
 }

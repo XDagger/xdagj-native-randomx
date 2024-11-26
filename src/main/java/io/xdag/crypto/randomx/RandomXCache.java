@@ -23,16 +23,44 @@
  */
 package io.xdag.crypto.randomx;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import com.sun.jna.Memory;
+import com.sun.jna.Pointer;
+import lombok.Getter;
 
-import org.junit.jupiter.api.Test;
+import java.util.Set;
 
-public class RandomXUtilsTest {
+/**
+ * Encapsulation for managing RandomX cache.
+ */
+@Getter
+public class RandomXCache implements AutoCloseable {
+    private final Pointer cachePointer;
+    private final Pointer keyPointer;
 
-    @Test
-    public void testLoadJNALibrary() {
-        RandomXJNA lib = RandomXUtils.loadJNALibrary();
-        assertNotNull(lib);
+    public RandomXCache(Set<RandomXFlag> flags, byte[] key) {
+        if (key == null) {
+            throw new NullPointerException("Key cannot be null.");
+        }
+
+        // Convert flags to integer value
+        int combinedFlags = RandomXFlag.toValue(flags);
+
+        // Allocate cache
+        this.cachePointer = RandomXJNALoader.getInstance().randomx_alloc_cache(combinedFlags);
+        if (this.cachePointer == null) {
+            throw new IllegalStateException("Failed to allocate RandomX cache.");
+        }
+
+        // Convert key to JNA Pointer
+        keyPointer = new Memory(key.length);
+        keyPointer.write(0, key, 0, key.length);
+
+        // Initialize cache
+        RandomXJNALoader.getInstance().randomx_init_cache(this.cachePointer, keyPointer, key.length);
     }
 
+    @Override
+    public void close() {
+        RandomXJNALoader.getInstance().randomx_release_cache(cachePointer);
+    }
 }

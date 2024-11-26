@@ -25,50 +25,83 @@ package io.xdag.crypto.randomx;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
-import lombok.Builder;
-import lombok.ToString;
+import lombok.Getter;
+
+import java.util.Set;
 
 /**
- * RandomX VM JNA Interface
+ * Encapsulation for managing RandomX Virtual Machine (VM).
  */
-@Builder
-@ToString
-public final class RandomXVM {
-
-    Pointer pointer;
-    RandomXWrapper parent;
-
-    /**
-     * Calculate hash of given message
-     * @param message the message to get the hash of
-     * @return the resulting hash
-     */
-    public synchronized byte[] getHash(byte[] message) {
-        Memory msgPointer = new Memory(message.length);
-        msgPointer.write(0, message, 0, message.length);
-
-        Memory hashPointer = new Memory(RandomXUtils.HASH_SIZE);
-        RandomXJNA.INSTANCE.randomx_calculate_hash(pointer, msgPointer, new NativeSize(message.length), hashPointer);
-
-        byte[] hash = hashPointer.getByteArray(0, RandomXUtils.HASH_SIZE);
-
-        msgPointer.clear(message.length);
-        hashPointer.clear(RandomXUtils.HASH_SIZE);
-        return hash;
-    }
-
-    Pointer getPointer() {
-        return pointer;
-    }
+@Getter
+public class RandomXVM implements AutoCloseable {
+    private final Pointer vm;
+    private RandomXCache cache;
+    private RandomXDataset dataset;
 
     /**
-     * Destroy this VM
+     * Creates a VM instance with the given flags, cache, and dataset.
+     *
+     * @param flags Configuration flags for the VM.
+     * @param cache Cache pointer.
+     * @param dataset Dataset pointer (can be null).
      */
-    public void destroy() {
-        RandomXJNA.INSTANCE.randomx_destroy_vm(pointer);
-        if(parent != null) {
-            parent.vms.remove(this);
+    public RandomXVM(Set<RandomXFlag> flags, RandomXCache cache, RandomXDataset dataset) {
+        this.cache = cache;
+        this.dataset = dataset;
+
+        // Convert flags to integer value
+        int combinedFlags = RandomXFlag.toValue(flags);
+        this.vm = RandomXJNALoader.getInstance().randomx_create_vm(combinedFlags, cache.getCachePointer(), dataset == null?null:dataset.getPointer());
+        if (vm == null) {
+            throw new IllegalStateException("Failed to create RandomX VM.");
         }
     }
 
+    /**
+     * Switches the cache used by this VM.
+     *
+     * @param cache New cache pointer.
+     */
+    public void setCache(RandomXCache cache) {
+        this.cache = cache;
+        RandomXJNALoader.getInstance().randomx_vm_set_cache(vm, cache.getCachePointer());
+    }
+
+    /**
+     * Switches the dataset used by this VM.
+     *
+     * @param dataset New dataset pointer.
+     */
+    public void setDataset(RandomXDataset dataset) {
+        this.dataset = dataset;
+        RandomXJNALoader.getInstance().randomx_vm_set_dataset(vm, dataset.getPointer());
+    }
+
+    /**
+     * Calculates a hash using the VM.
+     *
+     * @param input Input data as a byte array.
+     * @param output Output buffer for the calculated hash.
+     */
+    public void calculateHash(byte[] input, byte[] output) {
+        Pointer inputPointer = new Memory(input.length);
+        inputPointer.write(0, input, 0, input.length);
+
+        Pointer outputPointer = new Memory(output.length);
+        RandomXJNALoader.getInstance().randomx_calculate_hash(vm, inputPointer, input.length, outputPointer);
+
+        outputPointer.read(0, output, 0, output.length);
+    }
+
+    public Pointer getPoint() {
+        return vm;
+    }
+
+    /**
+     * Releases the allocated VM.
+     */
+    @Override
+    public void close() {
+        RandomXJNALoader.getInstance().randomx_destroy_vm(vm);
+    }
 }

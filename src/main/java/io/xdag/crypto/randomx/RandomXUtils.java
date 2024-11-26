@@ -23,18 +23,13 @@
  */
 package io.xdag.crypto.randomx;
 
-import com.sun.jna.Native;
-
+/**
+ * Utility class for RandomX constants and helper methods.
+ */
 public final class RandomXUtils {
 
-    public static final String LIBRARY_NAME = "randomx";
-    public static final int HASH_SIZE = 32;
-
-    /**
-     * Loads a library file from bundled resource.(JNA)
-     */
-    public static RandomXJNA loadJNALibrary() {
-        return Native.load(LIBRARY_NAME, RandomXJNA.class);
+    public static int getFlags() {
+        return RandomXJNALoader.getInstance().randomx_get_flags();
     }
 
 }

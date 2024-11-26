@@ -24,30 +24,15 @@
 package io.xdag.crypto.randomx;
 
 import org.junit.jupiter.api.Test;
-
-import java.util.EnumSet;
-import java.util.Set;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for RandomXVM.
+ * Tests for RandomXJNALoader.
  */
-public class RandomXVMTest {
+public class RandomXJNALoaderTest {
 
     @Test
-    public void testVMHashCalculation() {
-        Set<RandomXFlag> flags = EnumSet.of(RandomXFlag.DEFAULT);
-        byte[] key = "test_key".getBytes();
-        byte[] input = "test_input".getBytes();
-        byte[] output = new byte[32];
-
-        try (RandomXCache cache = new RandomXCache(flags, key);
-             RandomXVM vm = new RandomXVM(flags, cache, null)) {
-
-            vm.calculateHash(input, output);
-            assertNotNull(output, "Output should not be null.");
-            assertEquals(32, output.length, "Output size should be 32 bytes.");
-        }
+    public void testLibraryLoading() {
+        assertNotNull(RandomXJNALoader.getInstance(), "RandomXJNA instance should not be null.");
     }
 }

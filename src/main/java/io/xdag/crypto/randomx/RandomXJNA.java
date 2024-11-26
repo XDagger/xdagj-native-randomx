@@ -28,36 +28,21 @@ import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
 /**
- * RandomX JNA Interface
+ * JNA interface to map the RandomX native library functions.
  */
 public interface RandomXJNA extends Library {
-
-    RandomXJNA INSTANCE = RandomXUtils.loadJNALibrary();
-
     int randomx_get_flags();
-
     Pointer randomx_alloc_cache(int flags);
-
-    void randomx_init_cache(Pointer cache, Pointer key, NativeSize keySize);
-
+    void randomx_init_cache(Pointer cache, Pointer key, long keySize);
     void randomx_release_cache(Pointer cache);
-
     Pointer randomx_create_vm(int flags, Pointer cache, Pointer dataset);
-
     void randomx_destroy_vm(Pointer machine);
-
-    void randomx_vm_set_cache(Pointer machine, Pointer cache);
-
-    void randomx_calculate_hash(Pointer machine, Pointer input, NativeSize inputSize, Pointer output);
+    void randomx_calculate_hash(Pointer machine, Pointer input, long inputSize, Pointer output);
 
     Pointer randomx_alloc_dataset(int flags);
-
     void randomx_init_dataset(Pointer dataset, Pointer cache, NativeLong startItem, NativeLong itemCount);
-
-    void randomx_vm_set_dataset(Pointer machine, Pointer dataset);
-
-    NativeLong randomx_dataset_item_count();
-
     void randomx_release_dataset(Pointer dataset);
-
+    NativeLong randomx_dataset_item_count();
+    void randomx_vm_set_cache(Pointer machine, Pointer cache);
+    void randomx_vm_set_dataset(Pointer machine, Pointer dataset);
 }
