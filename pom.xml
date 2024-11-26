@@ -28,7 +28,7 @@
         <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <jna.version>5.14.0</jna.version>
+        <jna.version>5.15.0</jna.version>
         <lombok.version>1.18.34</lombok.version>
         <junit.version>5.10.3</junit.version>
         <jmh.version>1.37</jmh.version>
@@ -60,7 +60,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.9.0</version>
+                <version>3.13.0</version>
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
@@ -184,6 +184,20 @@
                 </executions>
             </plugin>
         </plugins>
+
+        <resources>
+            <!-- Include native libraries in the jar -->
+            <resource>
+                <directory>${project.basedir}/src/main/resources/native</directory>
+                <includes>
+                    <include>*.so</include>
+                    <include>*.dylib</include>
+                    <include>*.dll</include>
+                </includes>
+                <targetPath>native</targetPath>
+            </resource>
+        </resources>
+
     </build>
 
     <distributionManagement>
