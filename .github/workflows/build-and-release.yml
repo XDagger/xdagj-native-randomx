@@ -10,7 +10,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
+        arch: [x86_64, amd64, aarch64]
         include:
           # Linux - x86_64
           - os: ubuntu-latest
@@ -36,12 +37,6 @@ jobs:
             cmake_args: '-DARCH=arm64 -DBUILD_SHARED_LIBS=ON'
             artifact_name: 'native-libs-macos-aarch64'
             output_lib: 'librandomx_macos_aarch64.dylib'
-          # Windows - x86_64
-          - os: windows-latest
-            arch: x86_64
-            cmake_args: '-G "MinGW Makefiles" -DARCH=native -DBUILD_SHARED_LIBS=ON'
-            artifact_name: 'native-libs-windows-x86_64'
-            output_lib: 'librandomx_windows_x86_64.dll'
 
     steps:
       - name: Checkout code
