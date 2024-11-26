@@ -94,30 +94,12 @@ jobs:
           echo "Available Artifacts:"
           ls src/main/resources/native/
 
-      - name: Download Linux x86_64 Artifacts
+      - name: Download Dynamic Link Library Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: native-libs-linux-x86_64
-          
-      - name: Download Linux amd64 Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: native-libs-linux-amd64
-
-      - name: Download MacOS x86_64 Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: native-libs-macos-x86_64
-
-      - name: Download MacOS arm64 Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: native-libs-macos-arm64
-
-      - name: Download Windows Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: native-libs-windows
+          path: src/main/resources/native/
+          pattern: librandomx-*
+      - run: ls src/main/resources/native/
 
       - name: Set up JDK
         uses: actions/setup-java@v3
