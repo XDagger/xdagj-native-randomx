@@ -25,25 +25,39 @@ package io.xdag.crypto.randomx;
 
 import org.apache.commons.lang3.SystemUtils;
 
-import java.util.EnumSet;
 import java.util.Set;
 
 /**
  * Utility class for RandomX constants and helper methods.
+ * This class provides static methods to get RandomX flags and flag sets.
  */
 public final class RandomXUtils {
 
+    /**
+     * Gets the recommended RandomX flags for the current CPU.
+     * This method calls the native RandomX library to determine optimal flags.
+     *
+     * @return An integer representing the combined RandomX flags
+     */
     public static int getFlags() {
         return RandomXJNALoader.getInstance().randomx_get_flags();
     }
 
+    /**
+     * Gets a set of RandomX flags appropriate for the current system.
+     * This method converts the raw flags to a Set of RandomXFlag enums and
+     * applies platform-specific adjustments (e.g., removing JIT flag on macOS).
+     *
+     * @return A Set of RandomXFlag enums representing the enabled flags
+     */
     public static Set<RandomXFlag> getFlagsSet() {
         int flags = getFlags();
-        Set<RandomXFlag> flagsSet = EnumSet.of(RandomXFlag.DEFAULT);
+        Set<RandomXFlag> flagsSet = RandomXFlag.fromValue(flags);
 
-        if(SystemUtils.IS_OS_LINUX) {
-            flagsSet = RandomXFlag.fromValue(flags);
+        if (SystemUtils.IS_OS_MAC_OSX) {
+            flagsSet.remove(RandomXFlag.JIT);
         }
+
         return flagsSet;
     }
 

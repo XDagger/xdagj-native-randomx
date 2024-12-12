@@ -30,20 +30,34 @@ import lombok.Getter;
 import java.util.Set;
 
 /**
- * Encapsulation for managing RandomX Virtual Machine (VM).
+ * A class that encapsulates the RandomX Virtual Machine (VM) functionality.
+ * This class manages the lifecycle and operations of a RandomX VM instance.
  */
 @Getter
 public class RandomXVM implements AutoCloseable {
+    
+    /**
+     * The native pointer to the RandomX VM instance
+     */
     private final Pointer vm;
+    
+    /**
+     * The cache used by this VM instance
+     */
     private RandomXCache cache;
+    
+    /**
+     * The dataset used by this VM instance (optional)
+     */
     private RandomXDataset dataset;
 
     /**
-     * Creates a VM instance with the given flags, cache, and dataset.
+     * Creates a new RandomX VM instance with the specified configuration.
      *
-     * @param flags Configuration flags for the VM.
-     * @param cache Cache pointer.
-     * @param dataset Dataset pointer (can be null).
+     * @param flags The set of RandomX flags to configure the VM behavior
+     * @param cache The RandomX cache to be used by the VM
+     * @param dataset The RandomX dataset to be used by the VM (can be null)
+     * @throws IllegalStateException if VM creation fails
      */
     public RandomXVM(Set<RandomXFlag> flags, RandomXCache cache, RandomXDataset dataset) {
         this.cache = cache;
@@ -58,9 +72,10 @@ public class RandomXVM implements AutoCloseable {
     }
 
     /**
-     * Switches the cache used by this VM.
+     * Updates the cache used by this VM instance.
+     * This method allows switching to a different cache without recreating the VM.
      *
-     * @param cache New cache pointer.
+     * @param cache The new RandomX cache to be used
      */
     public void setCache(RandomXCache cache) {
         this.cache = cache;
@@ -68,9 +83,10 @@ public class RandomXVM implements AutoCloseable {
     }
 
     /**
-     * Switches the dataset used by this VM.
+     * Updates the dataset used by this VM instance.
+     * This method allows switching to a different dataset without recreating the VM.
      *
-     * @param dataset New dataset pointer.
+     * @param dataset The new RandomX dataset to be used
      */
     public void setDataset(RandomXDataset dataset) {
         this.dataset = dataset;
@@ -78,10 +94,10 @@ public class RandomXVM implements AutoCloseable {
     }
 
     /**
-     * Calculates a hash using the VM.
+     * Calculates a RandomX hash using the current VM configuration.
      *
-     * @param input Input data as a byte array.
-     * @param output Output buffer for the calculated hash.
+     * @param input The input data to be hashed
+     * @param output The buffer where the calculated hash will be stored
      */
     public void calculateHash(byte[] input, byte[] output) {
         Pointer inputPointer = new Memory(input.length);
@@ -93,12 +109,18 @@ public class RandomXVM implements AutoCloseable {
         outputPointer.read(0, output, 0, output.length);
     }
 
+    /**
+     * Gets the native pointer to the VM instance.
+     *
+     * @return The native pointer to the VM instance
+     */
     public Pointer getPoint() {
         return vm;
     }
 
     /**
-     * Releases the allocated VM.
+     * Releases the resources associated with this VM instance.
+     * This method is called automatically when using try-with-resources.
      */
     @Override
     public void close() {

@@ -26,8 +26,8 @@ package io.xdag.crypto.randomx;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.EnumSet;
 import java.util.HexFormat;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,63 +48,70 @@ public class RandomXTemplateTest {
         byte[] key3Bytes = key3.getBytes(StandardCharsets.UTF_8);
         byte[] key4Bytes = key4.getBytes(StandardCharsets.UTF_8);
 
+        Set<RandomXFlag> flagSet = RandomXUtils.getFlagsSet();
+        RandomXCache cache = new RandomXCache(flagSet);
+        cache.init(key1Bytes);
+
         HexFormat hex = HexFormat.of();
 
-        try(RandomXTemplate template = RandomXTemplate.builder()
+        RandomXTemplate template = RandomXTemplate.builder()
+                .cache(cache)
                 .miningMode(false)
-                .flags(RandomXUtils.getFlagsSet())
-                .build()) {
-            template.init(key1Bytes);
-            byte[] hash = template.calculateHash(key2Bytes);
-            assertEquals("781315d3e78dc16a5060cb87677ca548d8b9aabdef5221a2851b2cc72aa2875b", hex.formatHex(hash));
-        }
+                .flags(flagSet)
+                .build();
+        template.init();
+        byte[] hash = template.calculateHash(key2Bytes);
+        assertEquals("781315d3e78dc16a5060cb87677ca548d8b9aabdef5221a2851b2cc72aa2875b", hex.formatHex(hash));
 
-        try(RandomXTemplate template = RandomXTemplate.builder()
+        cache = new RandomXCache(flagSet);
+        cache.init(key3Bytes);
+        template = RandomXTemplate.builder()
+                .cache(cache)
                 .miningMode(false)
-                .flags(RandomXUtils.getFlagsSet())
-                .build()) {
-            template.init(key3Bytes);
-            byte[] hash = template.calculateHash(key3Bytes);
-            assertEquals("33e17472f3f691252d1f28a2e945b990c5878f514034006df5a06a23dc1cada0", hex.formatHex(hash));
-        }
+                .flags(flagSet)
+                .build();
+        template.init();
+        hash = template.calculateHash(key3Bytes);
+        assertEquals("33e17472f3f691252d1f28a2e945b990c5878f514034006df5a06a23dc1cada0", hex.formatHex(hash));
 
-        try(RandomXTemplate template = RandomXTemplate.builder()
+        cache = new RandomXCache(flagSet);
+        cache.init(key4Bytes);
+        template = RandomXTemplate.builder()
+                .cache(cache)
                 .miningMode(false)
-                .flags(RandomXUtils.getFlagsSet())
-                .build()) {
-            template.init(key4Bytes);
-            byte[] hash = template.calculateHash(key4Bytes);
-            assertEquals("5d4155322b69284bf45fa8ac182384490a87c55a6af47b7e72558cafa8832bd9", hex.formatHex(hash));
-        }
+                .flags(flagSet)
+                .build();
+        template.init();
+        hash = template.calculateHash(key4Bytes);
+        assertEquals("5d4155322b69284bf45fa8ac182384490a87c55a6af47b7e72558cafa8832bd9", hex.formatHex(hash));
+
     }
 
     @Test
     public void testChangeKey() {
-        String key = "hello xdagj-native-randomx";
-        byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+        String key1 = "hello xdagj-native-randomx";
+        byte[] key1Bytes = key1.getBytes(StandardCharsets.UTF_8);
+        String key2 = "world xdagj-native-randomx";
+        byte[] key2Bytes = key2.getBytes(StandardCharsets.UTF_8);
+
+        Set<RandomXFlag> flagSet = RandomXUtils.getFlagsSet();
+        RandomXCache cache = new RandomXCache(flagSet);
+        cache.init(key1Bytes);
 
         HexFormat hex = HexFormat.of();
 
-        try(RandomXTemplate template = RandomXTemplate.builder()
+        RandomXTemplate template = RandomXTemplate.builder()
+                .cache(cache)
                 .miningMode(false)
-                .flags(RandomXUtils.getFlagsSet())
-                .build()) {
-            template.init(keyBytes);
-            byte[] hash = template.calculateHash(keyBytes);
-            assertEquals("5d4155322b69284bf45fa8ac182384490a87c55a6af47b7e72558cafa8832bd9", hex.formatHex(hash));
-        }
+                .flags(flagSet)
+                .build();
+        template.init();
+        byte[] hash = template.calculateHash(key1Bytes);
+        assertEquals("5d4155322b69284bf45fa8ac182384490a87c55a6af47b7e72558cafa8832bd9", hex.formatHex(hash));
 
-        key = "world xdagj-native-randomx";
-        keyBytes = key.getBytes(StandardCharsets.UTF_8);
-
-        try(RandomXTemplate template = RandomXTemplate.builder()
-                .miningMode(false)
-                .flags(RandomXUtils.getFlagsSet())
-                .build()) {
-            template.init(keyBytes);
-            byte[] hash = template.calculateHash(keyBytes);
-            assertEquals("3910d7b054df9ba920e2f7e103aa2c1fc4597b13d1793f1ab08c1c9c922709c0", hex.formatHex(hash));
-        }
+        template.changeKey(key2Bytes);
+        hash = template.calculateHash(key2Bytes);
+        assertEquals("3910d7b054df9ba920e2f7e103aa2c1fc4597b13d1793f1ab08c1c9c922709c0", hex.formatHex(hash));
     }
 
 }

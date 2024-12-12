@@ -30,18 +30,31 @@ import lombok.Getter;
 import java.util.Set;
 
 /**
- * Encapsulation for managing RandomX cache.
+ * A class that encapsulates the RandomX cache functionality.
+ * This class manages the allocation, initialization and release of RandomX cache memory.
+ * It implements AutoCloseable to ensure proper resource cleanup.
  */
 @Getter
 public class RandomXCache implements AutoCloseable {
+    
+    /**
+     * Pointer to the allocated RandomX cache memory
+     */
     private final Pointer cachePointer;
-    private final Pointer keyPointer;
+    
+    /**
+     * Pointer to the key used for cache initialization
+     */
+    private Pointer keyPointer;
 
-    public RandomXCache(Set<RandomXFlag> flags, byte[] key) {
-        if (key == null) {
-            throw new NullPointerException("Key cannot be null.");
-        }
-
+    /**
+     * Constructs a new RandomXCache with the specified flags.
+     * Allocates memory for the cache using the native RandomX library.
+     *
+     * @param flags Set of RandomXFlag values that configure the cache behavior
+     * @throws IllegalStateException if cache allocation fails
+     */
+    public RandomXCache(Set<RandomXFlag> flags) {
         // Convert flags to integer value
         int combinedFlags = RandomXFlag.toValue(flags);
 
@@ -50,15 +63,31 @@ public class RandomXCache implements AutoCloseable {
         if (this.cachePointer == null) {
             throw new IllegalStateException("Failed to allocate RandomX cache.");
         }
+    }
+
+    /**
+     * Initializes the cache with the provided key.
+     * Converts the key to a native pointer and initializes the cache using the RandomX library.
+     *
+     * @param key byte array containing the key data
+     * @throws NullPointerException if the key is null
+     */
+    public void init(byte[] key) {
+        if (key == null) {
+            throw new NullPointerException("Key cannot be null.");
+        }
 
         // Convert key to JNA Pointer
         keyPointer = new Memory(key.length);
         keyPointer.write(0, key, 0, key.length);
-
         // Initialize cache
         RandomXJNALoader.getInstance().randomx_init_cache(this.cachePointer, keyPointer, key.length);
     }
 
+    /**
+     * Releases the allocated cache memory.
+     * This method is called automatically when the object is closed.
+     */
     @Override
     public void close() {
         RandomXJNALoader.getInstance().randomx_release_cache(cachePointer);

@@ -29,32 +29,77 @@ import java.util.EnumSet;
 import java.util.Set;
 
 /**
- * Enum representing the RandomX flags.
+ * Enum representing the RandomX flags for configuring the RandomX algorithm behavior.
+ * Each flag represents a specific feature or optimization that can be enabled.
  */
 @Getter
 public enum RandomXFlag {
 
+    /**
+     * Default flag with no special features enabled
+     */
     DEFAULT(0),
+    
+    /**
+     * Enables large memory pages for improved performance
+     */
     LARGE_PAGES(1),
+    
+    /**
+     * Enables hardware AES instructions for faster encryption
+     */
     HARD_AES(2),
+    
+    /**
+     * Uses full memory mode for increased security
+     */
     FULL_MEM(4),
+    
+    /**
+     * Enables Just-In-Time compilation for better performance
+     */
     JIT(8),
+    
+    /**
+     * Enables additional security features
+     */
     SECURE(16),
+    
+    /**
+     * Enables SSSE3 optimizations for Argon2 algorithm
+     */
     ARGON2_SSSE3(32),
+    
+    /**
+     * Enables AVX2 optimizations for Argon2 algorithm
+     */
     ARGON2_AVX2(64),
+    
+    /**
+     * Combined flag for all Argon2 optimizations
+     */
     ARGON2(96);
 
+    /**
+     * The integer value associated with this flag
+     */
     private final int value;
 
+    /**
+     * Constructs a new RandomXFlag with the specified value.
+     *
+     * @param value The integer value representing this flag
+     */
     RandomXFlag(int value) {
         this.value = value;
     }
 
     /**
      * Converts an integer value into a set of corresponding RandomXFlags.
+     * Each bit in the input value corresponds to a specific flag.
      *
-     * @param flags the combined integer value of multiple flags.
-     * @return a set of RandomXFlag enums.
+     * @param flags The combined integer value of multiple flags
+     * @return A set of RandomXFlag enums corresponding to the enabled bits
      */
     public static Set<RandomXFlag> fromValue(int flags) {
         EnumSet<RandomXFlag> result = EnumSet.noneOf(RandomXFlag.class);
@@ -68,9 +113,10 @@ public enum RandomXFlag {
 
     /**
      * Converts a set of RandomXFlags into their combined integer value.
+     * The resulting value has bits set corresponding to each flag in the set.
      *
-     * @param flagSet the set of RandomXFlags.
-     * @return the combined integer value.
+     * @param flagSet The set of RandomXFlags to combine
+     * @return The combined integer value representing all flags in the set
      */
     public static int toValue(Set<RandomXFlag> flagSet) {
         int result = 0;

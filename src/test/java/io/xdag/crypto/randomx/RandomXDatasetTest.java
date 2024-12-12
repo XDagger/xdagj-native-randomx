@@ -25,7 +25,7 @@ package io.xdag.crypto.randomx;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.EnumSet;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,16 +35,23 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class RandomXDatasetTest {
 
+    private final Set<RandomXFlag> flagsSet = RandomXUtils.getFlagsSet();
+    private final byte[] keyBytes = "test_key".getBytes(StandardCharsets.UTF_8);
+
     @Test
-    public void testDatasetInitializationWithDynamicThreads() {
-        Set<RandomXFlag> flags = RandomXUtils.getFlagsSet();
-        byte[] key = "test_key".getBytes();
+    public void testAllocAndRelease() {
+        try (RandomXDataset dataset = new RandomXDataset(flagsSet)) {
+            assertNotNull(dataset.getPointer(), "Dataset pointer should not be null.");
+        }
+    }
 
-        try (RandomXCache cache = new RandomXCache(flags, key);
-             RandomXDataset dataset = new RandomXDataset(flags)) {
-
+    @Test
+    public void testInit() {
+        try (RandomXCache cache = new RandomXCache(flagsSet);
+             RandomXDataset dataset = new RandomXDataset(flagsSet)) {
+            cache.init(keyBytes);
             long startTime = System.currentTimeMillis();
-            dataset.initDataset(cache.getCachePointer()); // Dynamically adjusts thread count
+            dataset.init(cache); // Dynamically adjusts thread count
             long elapsedTime = System.currentTimeMillis() - startTime;
 
             System.out.println("Dataset initialized in " + elapsedTime + " ms.");

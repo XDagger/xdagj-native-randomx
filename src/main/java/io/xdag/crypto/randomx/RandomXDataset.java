@@ -29,15 +29,23 @@ import com.sun.jna.Pointer;
 import java.util.Set;
 
 /**
- * Encapsulation for managing RandomX datasets with multi-threaded initialization.
+ * A class that encapsulates the RandomX dataset functionality with multi-threaded initialization support.
+ * This class manages the allocation, initialization and release of RandomX dataset memory.
+ * It implements AutoCloseable to ensure proper resource cleanup.
  */
 public class RandomXDataset implements AutoCloseable {
+
+    /**
+     * Pointer to the allocated RandomX dataset memory
+     */
     private final Pointer dataset;
 
     /**
-     * Allocates a RandomX dataset.
+     * Constructs a new RandomXDataset with the specified flags.
+     * Allocates memory for the dataset using the native RandomX library.
      *
-     * @param flags Configuration flags for the dataset.
+     * @param flags Set of RandomXFlag values that configure the dataset behavior
+     * @throws IllegalStateException if dataset allocation fails
      */
     public RandomXDataset(Set<RandomXFlag> flags) {
         // Convert flags to integer value
@@ -50,24 +58,28 @@ public class RandomXDataset implements AutoCloseable {
     }
 
     /**
-     * Multi-threaded initialization of the dataset.
-     * The number of threads is determined dynamically based on the available CPU cores.
+     * Initializes the dataset using multiple threads.
+     * The initialization work is divided equally among threads based on available CPU cores.
+     * Each thread initializes its assigned portion of the dataset items.
      *
-     * @param cache Cache pointer.
+     * @param cache The RandomXCache instance used to initialize the dataset
+     * @throws RuntimeException if the initialization is interrupted
      */
-    public void initDataset(Pointer cache) {
+    public void init(RandomXCache cache) {
         // Get the number of available processors (cores)
         int threads = Runtime.getRuntime().availableProcessors();
 
+        // Calculate total items and items per thread
         long itemCount = RandomXJNALoader.getInstance().randomx_dataset_item_count().longValue();
         long itemsPerThread = itemCount / threads;
 
+        // Create and start initialization threads
         Thread[] threadPool = new Thread[threads];
         for (int i = 0; i < threads; i++) {
             final long startItem = i * itemsPerThread;
             final long endItem = (i == threads - 1) ? itemCount : startItem + itemsPerThread;
 
-            threadPool[i] = new Thread(() -> RandomXJNALoader.getInstance().randomx_init_dataset(dataset, cache, new NativeLong(startItem), new NativeLong(endItem - startItem)));
+            threadPool[i] = new Thread(() -> RandomXJNALoader.getInstance().randomx_init_dataset(dataset, cache.getCachePointer(), new NativeLong(startItem), new NativeLong(endItem - startItem)));
             threadPool[i].start();
         }
 
@@ -83,16 +95,17 @@ public class RandomXDataset implements AutoCloseable {
     }
 
     /**
-     * Returns the pointer to the allocated dataset.
+     * Gets the pointer to the allocated dataset memory.
      *
-     * @return Dataset pointer.
+     * @return Pointer to the dataset memory
      */
     public Pointer getPointer() {
         return dataset;
     }
 
     /**
-     * Releases the allocated dataset.
+     * Releases the allocated dataset memory.
+     * This method is called automatically when using try-with-resources.
      */
     @Override
     public void close() {

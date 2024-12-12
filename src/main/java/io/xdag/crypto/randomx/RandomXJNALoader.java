@@ -32,24 +32,35 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
 /**
- * Singleton to load the RandomX native library using JNA.
+ * A singleton class responsible for loading and managing the RandomX native library using JNA.
+ * This class handles the platform-specific library loading and provides access to the RandomX native functions.
  */
 public final class RandomXJNALoader {
 
+    /**
+     * The singleton instance of the RandomX JNA interface
+     */
     private static RandomXJNA instance;
 
+    /**
+     * Static initialization block to load the library when the class is loaded
+     */
     static {
         init();
     }
 
+    /**
+     * Initializes the RandomX native library
+     */
     public static void init() {
         loadLibrary("librandomx");
     }
 
     /**
-     * Loads the RandomX native library as a singleton.
+     * Gets or creates the singleton instance of the RandomX JNA interface.
+     * Thread-safe implementation using synchronized method.
      *
-     * @return Instance of RandomXJNA.
+     * @return The singleton instance of RandomXJNA
      */
     public static synchronized RandomXJNA getInstance() {
         if (instance == null) {
@@ -60,6 +71,12 @@ public final class RandomXJNALoader {
 
     /**
      * Loads the native library for the current platform and architecture.
+     * Supports Windows, macOS, and Linux (x86_64) platforms.
+     * The library is extracted from resources to a temporary file before loading.
+     *
+     * @param libraryName The base name of the library to load
+     * @throws UnsupportedOperationException if the current platform is not supported
+     * @throws RuntimeException if the library loading fails
      */
     public static void loadLibrary(String libraryName) {
         String os = System.getProperty("os.name").toLowerCase();

@@ -27,33 +27,49 @@ import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 import java.util.Set;
 
+/**
+ * Example class demonstrating the usage of RandomX hashing algorithm.
+ * This class shows how to initialize and use the RandomX components to generate hashes.
+ */
 public class Example {
 
+    /**
+     * Main method demonstrating the RandomX hashing process.
+     * Shows initialization of RandomX components and hash calculation.
+     *
+     * @param args Command line arguments (not used)
+     */
     public static void main(String[] args) {
         // Key to be hashed
         String key = "hello xdagj-native-randomx";
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
 
-        // Get supported flags
+        // Get supported RandomX flags for the current CPU
         Set<RandomXFlag> flags = RandomXUtils.getFlagsSet();
+        System.out.println("Supported flags: " + flags);
+        int combinedFlags = RandomXFlag.toValue(flags);
+        System.out.println("Combined flags value: " + combinedFlags);
 
-        // Initialize RandomXTemplate
-        try (RandomXTemplate template = RandomXTemplate.builder()
-                .miningMode(false)
+        // Initialize RandomX cache with the supported flags
+        RandomXCache cache = new RandomXCache(flags);
+        cache.init(keyBytes);
+
+        // Create and configure RandomXTemplate using builder pattern
+        RandomXTemplate template = RandomXTemplate.builder()
+                .cache(cache)
+                .miningMode(false)  // Set to false for normal hashing mode
                 .flags(flags)
-                .build()) {
-            // Initialize the template with the key
-            template.init(keyBytes);
+                .build();
 
-            // Calculate hash
-            byte[] hash = template.calculateHash(keyBytes);
+        // Initialize the template with the configured settings
+        template.init();
 
-            // Print the hash in hexadecimal format
-            HexFormat hex = HexFormat.of();
-            System.out.printf("Message: %s%n", key);
-            System.out.printf("Hash: %s%n", hex.formatHex(hash));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // Calculate hash of the input key
+        byte[] hash = template.calculateHash(keyBytes);
+        
+        // Format and display the results
+        HexFormat hex = HexFormat.of();
+        System.out.printf("Message: %s%n", key);
+        System.out.printf("Hash: %s%n", hex.formatHex(hash));
     }
 }
