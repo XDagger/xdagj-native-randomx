@@ -26,15 +26,9 @@ package io.xdag.crypto.randomx;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.EnumSet;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-import com.sun.jna.Pointer;
 
 /**
  * Unit tests for RandomXDataset class.
