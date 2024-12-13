@@ -34,6 +34,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for RandomXTemplate class.
  * Tests the hash calculation and key change functionality.
+ * Verifies that the RandomX hash calculations produce expected results
+ * and that key changes are handled correctly.
  */
 public class RandomXTemplateTest {
 

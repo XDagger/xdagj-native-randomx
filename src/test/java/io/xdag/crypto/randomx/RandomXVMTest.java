@@ -32,14 +32,19 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for RandomXVM class.
  * Tests the hash calculation functionality using RandomX virtual machine.
+ * Verifies the basic operations and output format of the VM implementation.
  */
 public class RandomXVMTest {
 
     /**
      * Tests hash calculation using RandomXVM.
-     * Verifies that:
-     * 1. The output hash is not null
-     * 2. The output hash has the expected length of 32 bytes
+     * This test verifies:
+     * 1. VM initialization with given flags and cache
+     * 2. Hash calculation with test input
+     * 3. Output validation:
+     *    - Not null check
+     *    - Correct length (32 bytes) check
+     * 4. Proper resource cleanup using try-with-resources
      */
     @Test
     public void testVMHashCalculation() {

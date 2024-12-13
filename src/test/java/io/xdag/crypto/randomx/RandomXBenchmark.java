@@ -13,8 +13,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Comprehensive benchmark for RandomX operations.
+ * This benchmark tests both mining and light modes with batch and non-batch operations.
+ * Uses JMH framework for accurate performance measurements.
  */
-@State(Scope.Thread)
+@State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @Fork(1)
@@ -25,6 +27,7 @@ public class RandomXBenchmark {
 
     private static final Logger logger = LoggerFactory.getLogger(RandomXBenchmark.class);
 
+    // Sample block template for hash calculation
     private static final byte[] BLOCK_TEMPLATE = {
             (byte)0x07, (byte)0x07, (byte)0xf7, (byte)0xa4, (byte)0xf0, (byte)0xd6, (byte)0x05, (byte)0xb3,
             (byte)0x03, (byte)0x26, (byte)0x08, (byte)0x16, (byte)0xba, (byte)0x3f, (byte)0x10, (byte)0x90,
@@ -34,79 +37,118 @@ public class RandomXBenchmark {
             (byte)0x00, (byte)0x00, (byte)0x00
     };
 
-    private RandomXTemplate lightTemplate;
-    private RandomXTemplate miningTemplate;
+    // Shared resources across all benchmark threads
     private Set<RandomXFlag> flags;
     private RandomXCache cache;
     private RandomXDataset dataset;
 
-    @Setup(Level.Trial)
-    public void setup() {
-        logger.info("Setting up benchmark with 8 threads");
-        flags = RandomXUtils.getFlagsSet();
-        initializeTemplates();
-        logger.info("Benchmark setup completed with flags: {}", flags);
+    /**
+     * Thread-local state containing RandomX templates for both mining and light modes
+     */
+    @State(Scope.Thread)
+    public static class ThreadState {
+        RandomXTemplate lightTemplate;
+        RandomXTemplate miningTemplate;
+
+        /**
+         * Initialize thread-local templates using shared benchmark resources
+         */
+        @Setup(Level.Trial)
+        public void setup(RandomXBenchmark benchmark) {
+            lightTemplate = RandomXTemplate.builder()
+                    .miningMode(false)
+                    .flags(benchmark.flags)
+                    .cache(benchmark.cache)
+                    .build();
+            lightTemplate.init();
+
+            miningTemplate = RandomXTemplate.builder()
+                    .miningMode(true)
+                    .flags(benchmark.flags)
+                    .cache(benchmark.cache)
+                    .dataset(benchmark.dataset)
+                    .build();
+            miningTemplate.init();
+        }
+
+        /**
+         * Clean up thread-local resources
+         */
+        @TearDown(Level.Trial)
+        public void tearDown() {
+            if (lightTemplate != null) lightTemplate.close();
+            if (miningTemplate != null) miningTemplate.close();
+        }
     }
 
-    private void initializeTemplates() {
+    /**
+     * Initialize shared resources used across all benchmark threads
+     */
+    @Setup(Level.Trial)
+    public void setup() {
+        logger.info("Setting up shared resources");
+        flags = RandomXUtils.getFlagsSet();
+
         cache = new RandomXCache(flags);
         cache.init(BLOCK_TEMPLATE);
 
-        // Initialize light mode template
-        lightTemplate = RandomXTemplate.builder()
-                .miningMode(false)
-                .flags(flags)
-                .cache(cache)
-                .build();
-        lightTemplate.init();
-
-        // Initialize mining mode template with dataset
         dataset = new RandomXDataset(flags);
-        dataset.init(cache);
-        miningTemplate = RandomXTemplate.builder()
-                .miningMode(true)
-                .flags(flags)
-                .cache(cache)
-                .dataset(dataset)
-                .build();
-        miningTemplate.init();
+
+        logger.info("Shared resources setup completed");
     }
 
-    @TearDown
+    /**
+     * Clean up shared resources after benchmark completion
+     */
+    @TearDown(Level.Trial)
     public void tearDown() {
-        logger.info("Cleaning up benchmark resources");
-        if (lightTemplate != null) lightTemplate.close();
-        if (miningTemplate != null) miningTemplate.close();
+        logger.info("Cleaning up shared resources");
         if (dataset != null) dataset.close();
         if (cache != null) cache.close();
     }
 
+    /**
+     * Benchmark mining mode without batch processing
+     */
     @Benchmark
     @Group("miningNoBatch")
-    public byte[] miningModeNoBatchHash() {
-        return miningTemplate.calculateHash(BLOCK_TEMPLATE);
+    public byte[] miningModeNoBatchHash(ThreadState state) {
+        return state.miningTemplate.calculateHash(BLOCK_TEMPLATE);
     }
 
+    /**
+     * Benchmark mining mode with batch processing
+     */
     @Benchmark
     @Group("miningBatch")
-    public byte[] miningModeBatchHash() {
-        miningTemplate.calculateHashFirst(BLOCK_TEMPLATE);
-        return miningTemplate.calculateHashNext(BLOCK_TEMPLATE);
+    public byte[] miningModeBatchHash(ThreadState state) {
+        state.miningTemplate.calculateHashFirst(BLOCK_TEMPLATE);
+        return state.miningTemplate.calculateHashNext(BLOCK_TEMPLATE);
     }
 
+    /**
+     * Benchmark light mode without batch processing
+     */
     @Benchmark
     @Group("lightNoBatch")
-    public byte[] lightModeNoBatchHash() {
-        return lightTemplate.calculateHash(BLOCK_TEMPLATE);
+    public byte[] lightModeNoBatchHash(ThreadState state) {
+        return state.lightTemplate.calculateHash(BLOCK_TEMPLATE);
     }
 
+    /**
+     * Benchmark light mode with batch processing
+     */
     @Benchmark
     @Group("lightBatch")
-    public byte[] lightModeBatchHash() {
-        lightTemplate.calculateHashFirst(BLOCK_TEMPLATE);
-        return lightTemplate.calculateHashNext(BLOCK_TEMPLATE);
+    public byte[] lightModeBatchHash(ThreadState state) {
+        state.lightTemplate.calculateHashFirst(BLOCK_TEMPLATE);
+        return state.lightTemplate.calculateHashNext(BLOCK_TEMPLATE);
     }
 
+    /**
+     * Main method to run the benchmark
+     * Configures JMH options and executes the benchmark suite
+     */
     public static void main(String[] args) throws Exception {
         Options opt = new OptionsBuilder()
                 .include(RandomXBenchmark.class.getSimpleName())

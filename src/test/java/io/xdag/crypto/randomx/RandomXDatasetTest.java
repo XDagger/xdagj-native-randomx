@@ -37,13 +37,19 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.sun.jna.Pointer;
 
 /**
- * Tests for RandomXDataset with multi-threaded initialization based on CPU cores.
+ * Unit tests for RandomXDataset class.
+ * Tests the allocation, initialization and release of RandomX dataset resources.
+ * Includes tests for multi-threaded initialization based on CPU cores.
  */
 public class RandomXDatasetTest {
 
     private final Set<RandomXFlag> flagsSet = RandomXUtils.getFlagsSet();
     private final byte[] keyBytes = "test_key".getBytes(StandardCharsets.UTF_8);
 
+    /**
+     * Tests the allocation and automatic release of RandomX dataset resources.
+     * Verifies that the dataset pointer is properly initialized.
+     */
     @Test
     public void testAllocAndRelease() {
         try (RandomXDataset dataset = new RandomXDataset(flagsSet)) {
@@ -51,6 +57,11 @@ public class RandomXDatasetTest {
         }
     }
 
+    /**
+     * Tests the initialization of RandomX dataset with a cache.
+     * Measures and logs the initialization time.
+     * Verifies that initialization completes successfully and dataset pointer is valid.
+     */
     @Test
     void testInitialization() {
         try (RandomXCache cache = new RandomXCache(flagsSet);
