@@ -23,79 +23,146 @@
  */
 package io.xdag.crypto.randomx;
 
-import com.sun.jna.Memory;
-import com.sun.jna.Pointer;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.ToString;
 
 import java.util.*;
 
 /**
  * Template class for RandomX operations, providing a common workflow.
+ * This class encapsulates the functionality for RandomX mining and hashing operations.
  */
 @Builder
 @ToString
 public class RandomXTemplate implements AutoCloseable {
 
+    /** Flag indicating if the template is in mining mode */
     private final boolean miningMode;
+    
+    /** Set of RandomX flags for configuring the algorithm behavior */
+    @Getter
     private final Set<RandomXFlag> flags;
-
-    private ThreadLocal<RandomXVM> threadLocalVM;
+    
+    /** Cache for RandomX operations */
+    private final RandomXCache cache;
+    
+    /** Dataset for RandomX mining operations */
+    private RandomXDataset dataset;
+    
+    /** Virtual machine instance for RandomX operations */
+    private RandomXVM vm;
 
     /**
-     * Initialize randomX cache or dataset for a specific key
-     * @param key The key to initialize randomX with. (generally a hash)
+     * Initializes the RandomX cache or dataset based on the mining mode.
+     * If in mining mode, enables FULL_MEM flag and initializes dataset.
+     * Otherwise, removes FULL_MEM flag and sets dataset to null.
      */
-    public void init(byte[] key) {
-        RandomXDataset dataset;
-
-        if(this.miningMode) {
-            dataset = new RandomXDataset(flags);
+    public void init() {
+        Set<RandomXFlag> vmFlags = EnumSet.copyOf(flags);
+        if (miningMode) {
+            vmFlags.add(RandomXFlag.FULL_MEM);
+            dataset = new RandomXDataset(vmFlags);
+            dataset.init(cache);
         } else {
+            vmFlags.remove(RandomXFlag.FULL_MEM);
             dataset = null;
         }
-
-        RandomXCache cache = new RandomXCache(flags, key);
-        RandomXVM vm = new RandomXVM(flags,  cache, dataset);
-        this.threadLocalVM = new ThreadLocal<>();
-        threadLocalVM.set(vm);
+        vm = new RandomXVM(vmFlags, cache, dataset);
     }
 
     /**
-     * Change current randomX key by reinitializing dataset or cache
-     * @param key The key to initialize randomX with. (generally a hash)
+     * Changes the current RandomX key by reinitializing the dataset or cache.
+     * If the key is unchanged, returns without performing reinitialization.
+     * 
+     * @param key The key to initialize RandomX with (generally a hash)
      */
     public void changeKey(byte[] key) {
-        RandomXCache cache =  threadLocalVM.get().getCache();
-        if(key != null && cache!= null && cache.getCachePointer() != null && Arrays.equals(key, cache.getKeyPointer().getByteArray(0, key.length)))
+        if (key == null || key.length == 0) {
+            throw new IllegalArgumentException("Key cannot be null or empty");
+        }
+
+        RandomXCache currentCache = vm.getCache();
+        // Check if key is unchanged
+        if (currentCache != null && currentCache.getCachePointer() != null && 
+            currentCache.getKeyPointer() != null && 
+            Arrays.equals(key, currentCache.getKeyPointer().getByteArray(0, key.length))) {
             return;
-        threadLocalVM.get().setCache(new RandomXCache(flags, key));
-        if(miningMode) {
-            threadLocalVM.get().setDataset(new RandomXDataset(flags));
+        }
+
+        cache.init(key);
+        vm.setCache(cache);
+        
+        if (miningMode) {
+            if (dataset != null) {
+                dataset.close();
+            }
+            dataset = new RandomXDataset(flags);
+            dataset.init(cache);
+            vm.setDataset(dataset);
         }
     }
 
     /**
-     * Performs the hash calculation using the VM.
+     * Performs a single hash calculation using the RandomX VM.
      *
-     * @param input Input data for the hash.
-     * @return Calculated hash as a byte array.
+     * @param input Input data for the hash calculation
+     * @return A 32-byte array containing the calculated hash
      */
     public byte[] calculateHash(byte[] input) {
-        Pointer inputPointer = new Memory(input.length);
-        inputPointer.write(0, input, 0, input.length);
-
-        byte[] output = new byte[32];
-
-        Pointer outputPointer = new Memory(output.length);
-        RandomXJNALoader.getInstance().randomx_calculate_hash(this.threadLocalVM.get().getPoint(), inputPointer, input.length, outputPointer);
-
-        outputPointer.read(0, output, 0, output.length);
-        return output;
+        return vm.calculateHash(input);
     }
 
+    /**
+     * Begins a multi-part hash calculation by processing the first input.
+     * 
+     * @param input Initial input data for the hash calculation
+     */
+    public void calculateHashFirst(byte[] input) {
+        vm.calculateHashFirst(input);
+    }
+
+    /**
+     * Continues a multi-part hash calculation by processing the next input.
+     * 
+     * @param nextInput Next chunk of input data for the hash calculation
+     * @return A 32-byte array containing the intermediate hash result
+     */
+    public byte[] calculateHashNext(byte[] nextInput) {
+        return vm.calculateHashNext(nextInput);
+    }
+
+    /**
+     * Finalizes a multi-part hash calculation.
+     * 
+     * @return A 32-byte array containing the final hash result
+     */
+    public byte[] calculateHashLast() {
+        return vm.calculateHashLast();
+    }
+
+    /**
+     * Calculates a commitment hash for the given input string.
+     *
+     * @param input The input byte array to calculate commitment for
+     * @return A byte array containing the calculated commitment hash
+     */
+    public byte[] calcStringCommitment(byte[] input) {
+        return vm.calcStringCommitment(input);
+    }
+
+    /**
+     * Releases all allocated resources.
+     */
     @Override
     public void close() {
-        threadLocalVM.remove();
+        if (vm != null) {
+            vm.close();
+            vm = null;
+        }
+        if (dataset != null) {
+            dataset.close();
+            dataset = null;
+        }
     }
 }

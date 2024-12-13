@@ -27,10 +27,15 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for RandomXJNALoader.
+ * Unit tests for RandomXJNALoader class.
+ * Tests the loading and initialization of the RandomX native library through JNA.
  */
 public class RandomXJNALoaderTest {
 
+    /**
+     * Tests that the RandomX native library is properly loaded and initialized.
+     * Verifies that the singleton instance is not null after loading.
+     */
     @Test
     public void testLibraryLoading() {
         assertNotNull(RandomXJNALoader.getInstance(), "RandomXJNA instance should not be null.");

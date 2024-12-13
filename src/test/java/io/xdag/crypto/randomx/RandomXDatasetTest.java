@@ -25,30 +25,51 @@ package io.xdag.crypto.randomx;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.EnumSet;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for RandomXDataset with multi-threaded initialization based on CPU cores.
+ * Unit tests for RandomXDataset class.
+ * Tests the allocation, initialization and release of RandomX dataset resources.
+ * Includes tests for multi-threaded initialization based on CPU cores.
  */
 public class RandomXDatasetTest {
 
+    private final Set<RandomXFlag> flagsSet = RandomXUtils.getFlagsSet();
+    private final byte[] keyBytes = "test_key".getBytes(StandardCharsets.UTF_8);
+
+    /**
+     * Tests the allocation and automatic release of RandomX dataset resources.
+     * Verifies that the dataset pointer is properly initialized.
+     */
     @Test
-    public void testDatasetInitializationWithDynamicThreads() {
-        Set<RandomXFlag> flags = RandomXUtils.getFlagsSet();
-        byte[] key = "test_key".getBytes();
+    public void testAllocAndRelease() {
+        try (RandomXDataset dataset = new RandomXDataset(flagsSet)) {
+            assertNotNull(dataset.getPointer(), "Dataset pointer should not be null.");
+        }
+    }
 
-        try (RandomXCache cache = new RandomXCache(flags, key);
-             RandomXDataset dataset = new RandomXDataset(flags)) {
-
+    /**
+     * Tests the initialization of RandomX dataset with a cache.
+     * Measures and logs the initialization time.
+     * Verifies that initialization completes successfully and dataset pointer is valid.
+     */
+    @Test
+    void testInitialization() {
+        try (RandomXCache cache = new RandomXCache(flagsSet);
+             RandomXDataset dataset = new RandomXDataset(flagsSet)) {
+            
+            cache.init(keyBytes);
             long startTime = System.currentTimeMillis();
-            dataset.initDataset(cache.getCachePointer()); // Dynamically adjusts thread count
+            
+            assertDoesNotThrow(() -> dataset.init(cache));
+            
             long elapsedTime = System.currentTimeMillis() - startTime;
-
             System.out.println("Dataset initialized in " + elapsedTime + " ms.");
             assertNotNull(dataset.getPointer(), "Dataset pointer should not be null.");
         }
     }
+
 }

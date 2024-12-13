@@ -24,25 +24,41 @@
 package io.xdag.crypto.randomx;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
 
-import java.util.EnumSet;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for RandomXCache.
+ * Unit tests for RandomXCache class.
+ * Tests the allocation, initialization and release of RandomX cache resources.
  */
 public class RandomXCacheTest {
 
-    @Test
-    public void testCacheAllocationAndReleaseForMac() {
-        Set<RandomXFlag> flags = RandomXUtils.getFlagsSet();
-        byte[] key = "test_key".getBytes();
+    private final Set<RandomXFlag> flagsSet = RandomXUtils.getFlagsSet();
+    private final byte[] keyBytes = "test_key".getBytes(StandardCharsets.UTF_8);
 
-        try (RandomXCache cache = new RandomXCache(flags, key)) {
+    /**
+     * Tests the allocation and automatic release of RandomX cache resources.
+     * Verifies that the cache pointer is properly initialized.
+     */
+    @Test
+    public void testAllocAndRelease() {
+        try (RandomXCache cache = new RandomXCache(flagsSet)) {
             assertNotNull(cache.getCachePointer(), "Cache pointer should not be null.");
+        } // Cache is automatically released here.
+    }
+
+    /**
+     * Tests the initialization of RandomX cache with a key.
+     * Verifies that the cache can be properly initialized with test key bytes.
+     */
+    @Test
+    public void testInit() {
+        try (RandomXCache cache = new RandomXCache(flagsSet)) {
+            assertNotNull(cache.getCachePointer(), "Cache pointer should not be null.");
+            cache.init(keyBytes);
         } // Cache is automatically released here.
     }
 

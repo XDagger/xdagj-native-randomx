@@ -59,7 +59,7 @@ Compile and copy the appropriate shared library for your platform:
 ```bash
 cd randomx
 mkdir build && cd build
-cmake .. -DARCH=x86_64 -DBUILD_SHARED_LIBS=ON -DCMAKE_C_FLAGS="-fPIC"
+cmake .. -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON
 make
 cp -i librandomx.so ../../src/main/resources/native/librandomx_linux_x86_64.so
 ```
@@ -68,7 +68,7 @@ cp -i librandomx.so ../../src/main/resources/native/librandomx_linux_x86_64.so
 ```bash
 cd randomx
 mkdir build && cd build
-cmake .. -DARCH=x86_64 -DBUILD_SHARED_LIBS=ON
+cmake .. -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON
 make
 cp -i librandomx.dylib ../../src/main/resources/native/librandomx_macos_x86_64.dylib
 ```
@@ -77,7 +77,7 @@ cp -i librandomx.dylib ../../src/main/resources/native/librandomx_macos_x86_64.d
 ```bash
 cd randomx
 mkdir build && cd build
-cmake .. -DARCH=arm64 -DBUILD_SHARED_LIBS=ON
+cmake .. -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON
 make
 cp -i librandomx.dylib ../../src/main/resources/native/librandomx_macos_aarch64.dylib
 ```
@@ -86,7 +86,7 @@ cp -i librandomx.dylib ../../src/main/resources/native/librandomx_macos_aarch64.
 ```bash
 cd randomx
 mkdir build && cd build
-cmake .. -G "MinGW Makefiles" -DARCH=native -DBUILD_SHARED_LIBS=ON
+cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON
 make
 cp -i randomx.dll ../../src/main/resources/native/librandomx_windows_x86_64.dll
 ```
@@ -121,33 +121,41 @@ import java.util.HexFormat;
 import java.util.Set;
 
 public class Example {
-
+    
     public static void main(String[] args) {
         // Key to be hashed
         String key = "hello xdagj-native-randomx";
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
 
-        // Get supported flags
+        // Get supported RandomX flags for the current CPU
         Set<RandomXFlag> flags = RandomXUtils.getFlagsSet();
+        System.out.println("Supported flags: " + flags);
+        int combinedFlags = RandomXFlag.toValue(flags);
+        System.out.println("Combined flags value: " + combinedFlags);
 
-        // Initialize RandomXTemplate
+        // Initialize RandomX cache with the supported flags
+        RandomXCache cache = new RandomXCache(flags);
+        cache.init(keyBytes);
+
+        // Create and configure RandomXTemplate using builder pattern
+        byte[] hash;
         try (RandomXTemplate template = RandomXTemplate.builder()
-                .miningMode(false)
+                .cache(cache)
+                .miningMode(false)  // Set to false for normal hashing mode
                 .flags(flags)
                 .build()) {
-            // Initialize the template with the key
-            template.init(keyBytes);
 
-            // Calculate hash
-            byte[] hash = template.calculateHash(keyBytes);
+            // Initialize the template with the configured settings
+            template.init();
 
-            // Print the hash in hexadecimal format
-            HexFormat hex = HexFormat.of();
-            System.out.printf("Message: %s%n", key);
-            System.out.printf("Hash: %s%n", hex.formatHex(hash));
-        } catch (Exception e) {
-            e.printStackTrace();
+            // Calculate hash of the input key
+            hash = template.calculateHash(keyBytes);
         }
+
+        // Format and display the results
+        HexFormat hex = HexFormat.of();
+        System.out.printf("Message: %s%n", key);
+        System.out.printf("Hash: %s%n", hex.formatHex(hash));
     }
 }
 ```
@@ -157,15 +165,19 @@ public class Example {
 ## Benchmark Results
 
 ### Linux System Configuration
-- **OS**: Linux 5.4.119-19.0009.44 x86_64
+- **OS**: Linux 5.4.119
 - **CPU**: AMD EPYC 9754 (16 cores)
 - **RAM**: 32 GB
+- **thread**: 8
+- **RandomX Flags**: [DEFAULT, HARD_AES, JIT, ARGON2_SSSE3, ARGON2_AVX2, ARGON2]
 
 ### Linux Performance Results
 |           Benchmark            | Mode  | Cnt | Score   | Error  | Units |
 |:------------------------------:|:-----:|:---:|:-------:|:------:|:-----:|
-| RandomXJNAPerformance.testCalculateHash | thrpt | 25  | 38.793  | ±1.132 | ops/s |
-| RandomXJNAPerformance.testCalculateHash | avgt  | 25  | 0.027   | ±0.001 | s/op  |
+| RandomXBenchmark.lightBatch | thrpt |   | 328.736  |  | ops/s |
+| RandomXBenchmark.lightNoBatch | thrpt  |   | 325.383   |  | s/op  |
+| RandomXBenchmark.miningBatch | thrpt  |   | 2777.939   |  | s/op  |
+| RandomXBenchmark.miningNoBatch | thrpt  |   | 2817.811   |  | s/op  |
 
 ---
 
@@ -173,12 +185,18 @@ public class Example {
 - **OS**: macOS 15.1.1
 - **CPU**: Apple M3 Pro
 - **RAM**: 36 GB
+- **thread**: 8
+- **RandomX Flags**: [DEFAULT, HARD_AES, SECURE]
+
+JIT flag will cause jvm to crash in MacOS
 
 ### MacOS Performance Results
 |           Benchmark            | Mode  | Cnt | Score   | Error  | Units |
 |:------------------------------:|:-----:|:---:|:-------:|:------:|:-----:|
-| RandomXJNAPerformance.testCalculateHash | thrpt | 25  | 5.281  | ±0.118 | ops/s |
-| RandomXJNAPerformance.testCalculateHash | avgt  | 25  | 0.199   | ±0.006 | s/op  |
+| RandomXBenchmark.lightBatch | thrpt |   | 32.864  |  | ops/s |
+| RandomXBenchmark.lightNoBatch | thrpt  |   | 33.683   |  | s/op  |
+| RandomXBenchmark.miningBatch | thrpt  |   | 554.966   |  | s/op  |
+| RandomXBenchmark.miningNoBatch | thrpt  |   | 570.060   |  | s/op  |
 
 ---
 
