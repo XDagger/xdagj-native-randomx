@@ -23,8 +23,6 @@
  */
 package io.xdag.crypto.randomx;
 
-import com.sun.jna.Memory;
-import com.sun.jna.Pointer;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
@@ -37,7 +35,7 @@ import java.util.*;
  */
 @Builder
 @ToString
-public class RandomXTemplate {
+public class RandomXTemplate implements AutoCloseable {
 
     /** Flag indicating if the template is in mining mode */
     private final boolean miningMode;
@@ -47,7 +45,7 @@ public class RandomXTemplate {
     private final Set<RandomXFlag> flags;
     
     /** Cache for RandomX operations */
-    private RandomXCache cache;
+    private final RandomXCache cache;
     
     /** Dataset for RandomX mining operations */
     private RandomXDataset dataset;
@@ -61,14 +59,16 @@ public class RandomXTemplate {
      * Otherwise, removes FULL_MEM flag and sets dataset to null.
      */
     public void init() {
-        if(this.miningMode) {
-            flags.add(RandomXFlag.FULL_MEM);
-            dataset = new RandomXDataset(flags);
+        Set<RandomXFlag> vmFlags = EnumSet.copyOf(flags);
+        if (miningMode) {
+            vmFlags.add(RandomXFlag.FULL_MEM);
+            dataset = new RandomXDataset(vmFlags);
+            dataset.init(cache);
         } else {
-            flags.remove(RandomXFlag.FULL_MEM);
+            vmFlags.remove(RandomXFlag.FULL_MEM);
             dataset = null;
         }
-        vm = new RandomXVM(flags, cache, dataset);
+        vm = new RandomXVM(vmFlags, cache, dataset);
     }
 
     /**
@@ -78,16 +78,26 @@ public class RandomXTemplate {
      * @param key The key to initialize RandomX with (generally a hash)
      */
     public void changeKey(byte[] key) {
-        assert cache != null;
-        RandomXCache cache = vm.getCache();
-        if(key != null && cache!= null && cache.getCachePointer() != null && (cache.getKeyPointer() != null && Arrays.equals(key, cache.getKeyPointer().getByteArray(0, key.length))))
-            return;
+        if (key == null || key.length == 0) {
+            throw new IllegalArgumentException("Key cannot be null or empty");
+        }
 
-        assert cache != null;
+        RandomXCache currentCache = vm.getCache();
+        // Check if key is unchanged
+        if (currentCache != null && currentCache.getCachePointer() != null && 
+            currentCache.getKeyPointer() != null && 
+            Arrays.equals(key, currentCache.getKeyPointer().getByteArray(0, key.length))) {
+            return;
+        }
+
         cache.init(key);
         vm.setCache(cache);
-        if(miningMode) {
-            RandomXDataset dataset = new RandomXDataset(flags);
+        
+        if (miningMode) {
+            if (dataset != null) {
+                dataset.close();
+            }
+            dataset = new RandomXDataset(flags);
             dataset.init(cache);
             vm.setDataset(dataset);
         }
@@ -100,16 +110,7 @@ public class RandomXTemplate {
      * @return A 32-byte array containing the calculated hash
      */
     public byte[] calculateHash(byte[] input) {
-        Pointer inputPointer = new Memory(input.length);
-        inputPointer.write(0, input, 0, input.length);
-
-        byte[] output = new byte[32];
-
-        Pointer outputPointer = new Memory(output.length);
-        RandomXJNALoader.getInstance().randomx_calculate_hash(vm.getPoint(), inputPointer, input.length, outputPointer);
-
-        outputPointer.read(0, output, 0, output.length);
-        return output;
+        return vm.calculateHash(input);
     }
 
     /**
@@ -118,9 +119,7 @@ public class RandomXTemplate {
      * @param input Initial input data for the hash calculation
      */
     public void calculateHashFirst(byte[] input) {
-        Pointer inputPointer = new Memory(input.length);
-        inputPointer.write(0, input, 0, input.length);
-        RandomXJNALoader.getInstance().randomx_calculate_hash_first(vm.getPoint(), inputPointer, input.length);
+        vm.calculateHashFirst(input);
     }
 
     /**
@@ -130,15 +129,7 @@ public class RandomXTemplate {
      * @return A 32-byte array containing the intermediate hash result
      */
     public byte[] calculateHashNext(byte[] nextInput) {
-        Pointer inputPointer = new Memory(nextInput.length);
-        inputPointer.write(0, nextInput, 0, nextInput.length);
-
-        byte[] output = new byte[32];
-        Pointer outputPointer = new Memory(output.length);
-        RandomXJNALoader.getInstance().randomx_calculate_hash_next(vm.getPoint(), inputPointer, nextInput.length, outputPointer);
-
-        outputPointer.read(0, output, 0, output.length);
-        return output;
+        return vm.calculateHashNext(nextInput);
     }
 
     /**
@@ -147,32 +138,31 @@ public class RandomXTemplate {
      * @return A 32-byte array containing the final hash result
      */
     public byte[] calculateHashLast() {
-        byte[] output = new byte[32];
-        Pointer outputPointer = new Memory(output.length);
-        RandomXJNALoader.getInstance().randomx_calculate_hash_last(vm.getPoint(), outputPointer);
-        outputPointer.read(0, output, 0, output.length);
-        return output;
+        return vm.calculateHashLast();
     }
 
     /**
      * Calculates a commitment hash for the given input string.
-     * This is a two-step process that first calculates a regular hash and then
-     * generates a commitment from that hash.
-     * 
-     * @param input Input data for the commitment calculation
-     * @return A 32-byte array containing the commitment hash
+     *
+     * @param input The input byte array to calculate commitment for
+     * @return A byte array containing the calculated commitment hash
      */
     public byte[] calcStringCommitment(byte[] input) {
-        Pointer inputPointer = new Memory(input.length);
-        inputPointer.write(0, input, 0, input.length);
-
-        byte[] output = new byte[32];
-        Pointer outputPointer = new Memory(output.length);
-        RandomXJNALoader.getInstance().randomx_calculate_hash(vm.getPoint(), inputPointer, input.length, outputPointer);
-        outputPointer.read(0, output, 0, output.length);
-        RandomXJNALoader.getInstance().randomx_calculate_commitment(inputPointer, input.length, outputPointer, outputPointer);
-        outputPointer.read(0, output, 0, output.length);
-        return output;
+        return vm.calcStringCommitment(input);
     }
 
+    /**
+     * Releases all allocated resources.
+     */
+    @Override
+    public void close() {
+        if (vm != null) {
+            vm.close();
+            vm = null;
+        }
+        if (dataset != null) {
+            dataset.close();
+            dataset = null;
+        }
+    }
 }

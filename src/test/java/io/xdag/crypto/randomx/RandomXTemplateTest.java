@@ -32,7 +32,8 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for RandomXTemplate.
+ * Unit tests for RandomXTemplate class.
+ * Tests the hash calculation and key change functionality.
  */
 public class RandomXTemplateTest {
 

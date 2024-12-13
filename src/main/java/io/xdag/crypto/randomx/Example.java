@@ -55,18 +55,20 @@ public class Example {
         cache.init(keyBytes);
 
         // Create and configure RandomXTemplate using builder pattern
-        RandomXTemplate template = RandomXTemplate.builder()
+        byte[] hash;
+        try (RandomXTemplate template = RandomXTemplate.builder()
                 .cache(cache)
                 .miningMode(false)  // Set to false for normal hashing mode
                 .flags(flags)
-                .build();
+                .build()) {
 
-        // Initialize the template with the configured settings
-        template.init();
+            // Initialize the template with the configured settings
+            template.init();
 
-        // Calculate hash of the input key
-        byte[] hash = template.calculateHash(keyBytes);
-        
+            // Calculate hash of the input key
+            hash = template.calculateHash(keyBytes);
+        }
+
         // Format and display the results
         HexFormat hex = HexFormat.of();
         System.out.printf("Message: %s%n", key);

@@ -34,10 +34,18 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for RandomX hash calculation functionality.
+ * Tests various hash operations including single hash, batch hash and string commitment.
+ */
 public class RandomXTests {
     private RandomXTemplate template;
     private HexFormat hex;
 
+    /**
+     * Sets up the test environment before each test.
+     * Initializes RandomX template with cache and dataset.
+     */
     @BeforeEach
     public void setUp() {
         Set<RandomXFlag> flagsSet = RandomXUtils.getFlagsSet();
@@ -53,6 +61,10 @@ public class RandomXTests {
         hex = HexFormat.of();
     }
 
+    /**
+     * Tests string hash calculation with different key-input pairs.
+     * Verifies that the hash output matches expected values.
+     */
     @ParameterizedTest(name = "key={0}, input={1}, output={2}")
     @CsvSource({
             "test key 000,This is a test,639183aae1bf4c9a35884cb46b09cad9175f04efd7684e7262a0ac1c2f0b4e3f",
@@ -68,6 +80,10 @@ public class RandomXTests {
         assertEquals(output, hex.formatHex(template.calculateHash(inputBytes)));
     }
 
+    /**
+     * Tests string commitment calculation.
+     * Verifies the commitment hash output matches expected value.
+     */
     @ParameterizedTest(name = "key={0}, input={1}, output={2}")
     @CsvSource({
             "test key 000,This is a test,d53ccf348b75291b7be76f0a7ac8208bbced734b912f6fca60539ab6f86be919",
@@ -80,6 +96,10 @@ public class RandomXTests {
         assertEquals(output, hex.formatHex(template.calcStringCommitment(inputBytes)));
     }
 
+    /**
+     * Tests hash calculation with hex input.
+     * Verifies the hash output matches expected value.
+     */
     @ParameterizedTest(name = "key={0}, input={1}, output={2}")
     @CsvSource({
             "test key 001,0b0b98bea7e805e0010a2126d287a2a0cc833d312cb786385a7c2f9de69d25537f584a9bc9977b00000000666fd8753bf61a8631f12984e3fd44f4014eca629276817b56f32e9b68bd82f416,c56414121acda1713c2f2a819d8ae38aed7c80c35c2a769298d34f03833cd5f1",
@@ -92,6 +112,10 @@ public class RandomXTests {
         assertEquals(output, hex.formatHex(template.calculateHash(inputBytes)));
     }
 
+    /**
+     * Tests batch hash calculation functionality.
+     * Processes multiple inputs in sequence and verifies each hash output.
+     */
     @Test
     void testBatchHash() {
         byte[] keyBytes = "test key 000".getBytes(StandardCharsets.UTF_8);

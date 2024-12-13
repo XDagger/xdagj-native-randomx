@@ -26,8 +26,11 @@ package io.xdag.crypto.randomx;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A class that encapsulates the RandomX cache functionality.
@@ -36,60 +39,106 @@ import java.util.Set;
  */
 @Getter
 public class RandomXCache implements AutoCloseable {
+    private static final Logger logger = LoggerFactory.getLogger(RandomXCache.class);
     
     /**
-     * Pointer to the allocated RandomX cache memory
+     * Pointer to the allocated RandomX cache memory.
+     * -- GETTER --
+     * Returns the pointer to the allocated cache memory.
      */
+    @Getter
     private final Pointer cachePointer;
     
     /**
      * Pointer to the key used for cache initialization
      */
-    private Pointer keyPointer;
+    private volatile Pointer keyPointer;
+    private int keyLength;
+    private final ReentrantLock lock = new ReentrantLock();
 
     /**
      * Constructs a new RandomXCache with the specified flags.
      * Allocates memory for the cache using the native RandomX library.
      *
      * @param flags Set of RandomXFlag values that configure the cache behavior
+     * @throws IllegalArgumentException if flags is null or empty
      * @throws IllegalStateException if cache allocation fails
      */
     public RandomXCache(Set<RandomXFlag> flags) {
-        // Convert flags to integer value
+        if (flags == null || flags.isEmpty()) {
+            throw new IllegalArgumentException("Flags cannot be null or empty");
+        }
+        
         int combinedFlags = RandomXFlag.toValue(flags);
-
-        // Allocate cache
+        logger.debug("Allocating RandomX cache with flags: {}", flags);
+        
         this.cachePointer = RandomXJNALoader.getInstance().randomx_alloc_cache(combinedFlags);
         if (this.cachePointer == null) {
-            throw new IllegalStateException("Failed to allocate RandomX cache.");
+            throw new IllegalStateException("Failed to allocate RandomX cache");
         }
+        
+        logger.debug("RandomX cache allocated successfully");
     }
 
     /**
      * Initializes the cache with the provided key.
-     * Converts the key to a native pointer and initializes the cache using the RandomX library.
+     * This method is thread-safe and can be called multiple times with different keys.
      *
      * @param key byte array containing the key data
-     * @throws NullPointerException if the key is null
+     * @throws IllegalArgumentException if key is null or empty
      */
     public void init(byte[] key) {
-        if (key == null) {
-            throw new NullPointerException("Key cannot be null.");
+        if (key == null || key.length == 0) {
+            throw new IllegalArgumentException("Key cannot be null or empty");
         }
 
-        // Convert key to JNA Pointer
-        keyPointer = new Memory(key.length);
-        keyPointer.write(0, key, 0, key.length);
-        // Initialize cache
-        RandomXJNALoader.getInstance().randomx_init_cache(this.cachePointer, keyPointer, key.length);
+        lock.lock();
+        try {
+            long startTime = System.nanoTime();
+            logger.debug("Initializing cache with key length: {}", key.length);
+            
+            // Free old key pointer if exists
+            if (keyPointer != null) {
+                keyPointer.clear(keyLength);
+            }
+            
+            // Allocate and initialize new key
+            keyLength = key.length;
+            keyPointer = new Memory(key.length);
+            keyPointer.write(0, key, 0, key.length);
+            
+            RandomXJNALoader.getInstance().randomx_init_cache(
+                this.cachePointer,
+                keyPointer,
+                key.length
+            );
+            
+            long endTime = System.nanoTime();
+            logger.debug("Cache initialization completed in {} ms", (endTime - startTime) / 1_000_000);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
-     * Releases the allocated cache memory.
-     * This method is called automatically when the object is closed.
+     * Releases the allocated cache memory and key memory.
+     * This method is thread-safe and idempotent.
      */
     @Override
     public void close() {
-        RandomXJNALoader.getInstance().randomx_release_cache(cachePointer);
+        lock.lock();
+        try {
+            if (keyPointer != null) {
+                keyPointer.clear(keyLength);
+                keyPointer = null;
+            }
+            
+            if (cachePointer != null) {
+                RandomXJNALoader.getInstance().randomx_release_cache(cachePointer);
+                logger.debug("RandomX cache released successfully");
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 }

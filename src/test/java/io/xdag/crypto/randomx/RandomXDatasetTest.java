@@ -26,9 +26,15 @@ package io.xdag.crypto.randomx;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.sun.jna.Pointer;
 
 /**
  * Tests for RandomXDataset with multi-threaded initialization based on CPU cores.
@@ -46,16 +52,19 @@ public class RandomXDatasetTest {
     }
 
     @Test
-    public void testInit() {
+    void testInitialization() {
         try (RandomXCache cache = new RandomXCache(flagsSet);
              RandomXDataset dataset = new RandomXDataset(flagsSet)) {
+            
             cache.init(keyBytes);
             long startTime = System.currentTimeMillis();
-            dataset.init(cache); // Dynamically adjusts thread count
+            
+            assertDoesNotThrow(() -> dataset.init(cache));
+            
             long elapsedTime = System.currentTimeMillis() - startTime;
-
             System.out.println("Dataset initialized in " + elapsedTime + " ms.");
             assertNotNull(dataset.getPointer(), "Dataset pointer should not be null.");
         }
     }
+
 }

@@ -30,21 +30,27 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for RandomXVM.
+ * Unit tests for RandomXVM class.
+ * Tests the hash calculation functionality using RandomX virtual machine.
  */
 public class RandomXVMTest {
 
+    /**
+     * Tests hash calculation using RandomXVM.
+     * Verifies that:
+     * 1. The output hash is not null
+     * 2. The output hash has the expected length of 32 bytes
+     */
     @Test
     public void testVMHashCalculation() {
         Set<RandomXFlag> flags = RandomXUtils.getFlagsSet();
         byte[] keyBytes = "test_key".getBytes();
         byte[] input = "test_input".getBytes();
-        byte[] output = new byte[32];
 
         try (RandomXCache cache = new RandomXCache(flags);
              RandomXVM vm = new RandomXVM(flags, cache, null)) {
             cache.init(keyBytes);
-            vm.calculateHash(input, output);
+            byte[] output = vm.calculateHash(input);
             assertNotNull(output, "Output should not be null.");
             assertEquals(32, output.length, "Output size should be 32 bytes.");
         }

@@ -27,6 +27,17 @@ import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A class that encapsulates the RandomX dataset functionality with multi-threaded initialization support.
@@ -34,6 +45,8 @@ import java.util.Set;
  * It implements AutoCloseable to ensure proper resource cleanup.
  */
 public class RandomXDataset implements AutoCloseable {
+
+    private static final Logger logger = LoggerFactory.getLogger(RandomXDataset.class);
 
     /**
      * Pointer to the allocated RandomX dataset memory
@@ -48,13 +61,18 @@ public class RandomXDataset implements AutoCloseable {
      * @throws IllegalStateException if dataset allocation fails
      */
     public RandomXDataset(Set<RandomXFlag> flags) {
-        // Convert flags to integer value
-        int combinedFlags = RandomXFlag.toValue(flags);
-
-        this.dataset = RandomXJNALoader.getInstance().randomx_alloc_dataset(combinedFlags);
-        if (dataset == null) {
-            throw new IllegalStateException("Failed to allocate RandomX dataset.");
+        if (flags == null || flags.isEmpty()) {
+            throw new IllegalArgumentException("Flags cannot be null or empty");
         }
+        
+        int combinedFlags = RandomXFlag.toValue(flags);
+        this.dataset = RandomXJNALoader.getInstance().randomx_alloc_dataset(combinedFlags);
+        
+        if (dataset == null) {
+            throw new IllegalStateException("Failed to allocate RandomX dataset");
+        }
+        
+        logger.debug("RandomX dataset allocated successfully with flags: {}", flags);
     }
 
     /**
@@ -66,30 +84,95 @@ public class RandomXDataset implements AutoCloseable {
      * @throws RuntimeException if the initialization is interrupted
      */
     public void init(RandomXCache cache) {
-        // Get the number of available processors (cores)
-        int threads = Runtime.getRuntime().availableProcessors();
-
-        // Calculate total items and items per thread
-        long itemCount = RandomXJNALoader.getInstance().randomx_dataset_item_count().longValue();
-        long itemsPerThread = itemCount / threads;
-
-        // Create and start initialization threads
-        Thread[] threadPool = new Thread[threads];
-        for (int i = 0; i < threads; i++) {
-            final long startItem = i * itemsPerThread;
-            final long endItem = (i == threads - 1) ? itemCount : startItem + itemsPerThread;
-
-            threadPool[i] = new Thread(() -> RandomXJNALoader.getInstance().randomx_init_dataset(dataset, cache.getCachePointer(), new NativeLong(startItem), new NativeLong(endItem - startItem)));
-            threadPool[i].start();
+        if (cache == null) {
+            throw new IllegalArgumentException("Cache cannot be null");
         }
+        
+        long startTime = System.nanoTime();
+        
+        // Get total items count
+        long totalItems = RandomXJNALoader.getInstance().randomx_dataset_item_count().longValue();
+        
+        // Calculate optimal thread count
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        // Default to half of available processors, but can be configured
+        int initThreadCount = Math.max(1, availableProcessors / 2);
+        
+        logger.info("Initializing dataset with {} threads for {} items", initThreadCount, totalItems);
+        
+        // Create thread pool
+        ExecutorService executor = Executors.newFixedThreadPool(initThreadCount, new ThreadFactory() {
+            private final AtomicInteger threadNumber = new AtomicInteger(1);
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("RandomX-Dataset-Init-" + threadNumber.getAndIncrement());
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
 
-        // Wait for all threads to complete
-        for (Thread thread : threadPool) {
+        try {
+            // Calculate items per thread - ensure even distribution
+            long perThread = totalItems / initThreadCount;
+            long remainder = totalItems % initThreadCount;
+            List<Future<?>> futures = new ArrayList<>(initThreadCount);
+            
+            // Submit initialization tasks
+            long startItem = 0;
+            for (int i = 0; i < initThreadCount; i++) {
+                // Add remainder items to the last thread
+                long itemCount = perThread + (i == initThreadCount - 1 ? remainder : 0);
+                final long start = startItem;
+                final long count = itemCount;
+                
+                futures.add(executor.submit(() -> {
+                    try {
+                        logger.debug("Thread {} initializing items [{}, {})", 
+                                Thread.currentThread().getName(), start, start + count);
+
+                        RandomXJNALoader.getInstance().randomx_init_dataset(
+                                dataset,
+                                cache.getCachePointer(),
+                                new NativeLong(start),
+                                new NativeLong(count)
+                        );
+                        
+                        logger.debug("Thread {} completed initialization of {} items", 
+                                Thread.currentThread().getName(), count);
+                    } catch (Exception e) {
+                        logger.error("Dataset initialization failed for range [{}, {})", start, start + count, e);
+                        throw new RuntimeException("Dataset initialization failed", e);
+                    }
+                }));
+                
+                startItem += itemCount;
+            }
+            
+            // Wait for all threads to complete
+            for (Future<?> future : futures) {
+                try {
+                    future.get();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Dataset initialization interrupted", e);
+                } catch (ExecutionException e) {
+                    throw new RuntimeException("Dataset initialization failed", e.getCause());
+                }
+            }
+            
+            long duration = (System.nanoTime() - startTime) / 1_000_000;
+            logger.info("Dataset initialization completed in {} ms", duration);
+            
+        } finally {
+            executor.shutdown();
             try {
-                thread.join();
+                if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
+                    executor.shutdownNow();
+                }
             } catch (InterruptedException e) {
+                executor.shutdownNow();
                 Thread.currentThread().interrupt();
-                throw new RuntimeException("Dataset initialization interrupted", e);
             }
         }
     }
@@ -109,6 +192,9 @@ public class RandomXDataset implements AutoCloseable {
      */
     @Override
     public void close() {
-        RandomXJNALoader.getInstance().randomx_release_dataset(dataset);
+        if (dataset != null) {
+            RandomXJNALoader.getInstance().randomx_release_dataset(dataset);
+            logger.debug("RandomX dataset released successfully");
+        }
     }
 }
