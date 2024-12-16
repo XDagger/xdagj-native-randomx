@@ -74,7 +74,7 @@ jobs:
           cd randomx
           mkdir build && cd build
           cmake .. ${{ matrix.cmake_args }}
-          make
+          make -j4
           mkdir -p ../../src/main/resources/native
           if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             cp *.so ../../src/main/resources/native/${{ matrix.output_lib }}
