@@ -60,7 +60,7 @@ Compile and copy the appropriate shared library for your platform:
 cd randomx
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON
-make
+make -j4
 cp -i librandomx.so ../../src/main/resources/native/librandomx_linux_x86_64.so
 ```
 
@@ -69,7 +69,7 @@ cp -i librandomx.so ../../src/main/resources/native/librandomx_linux_x86_64.so
 cd randomx
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON
-make
+make -j4
 cp -i librandomx.dylib ../../src/main/resources/native/librandomx_macos_x86_64.dylib
 ```
 
@@ -78,7 +78,7 @@ cp -i librandomx.dylib ../../src/main/resources/native/librandomx_macos_x86_64.d
 cd randomx
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON
-make
+make -j4
 cp -i librandomx.dylib ../../src/main/resources/native/librandomx_macos_aarch64.dylib
 ```
 
@@ -87,7 +87,7 @@ cp -i librandomx.dylib ../../src/main/resources/native/librandomx_macos_aarch64.
 cd randomx
 mkdir build && cd build
 cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON
-make
+make -j4
 cp -i randomx.dll ../../src/main/resources/native/librandomx_windows_x86_64.dll
 ```
 
