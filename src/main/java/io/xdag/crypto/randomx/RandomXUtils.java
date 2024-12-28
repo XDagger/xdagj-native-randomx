@@ -23,6 +23,7 @@
  */
 package io.xdag.crypto.randomx;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.util.Set;
@@ -53,8 +54,7 @@ public final class RandomXUtils {
     public static Set<RandomXFlag> getFlagsSet() {
         int flags = getFlags();
         Set<RandomXFlag> flagsSet = RandomXFlag.fromValue(flags);
-
-        if (SystemUtils.IS_OS_MAC_OSX) {
+        if (SystemUtils.IS_OS_MAC_OSX && StringUtils.containsIgnoreCase(SystemUtils.OS_ARCH, "aarch64")) {
             flagsSet.remove(RandomXFlag.JIT);
         }
 
