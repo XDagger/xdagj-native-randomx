@@ -59,7 +59,7 @@ Compile and copy the appropriate shared library for your platform:
 ```bash
 cd randomx
 mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON
+cmake .. -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON -DCMAKE_C_FLAGS="-fPIC"
 make -j4
 cp -i librandomx.so ../../src/main/resources/native/librandomx_linux_x86_64.so
 ```
