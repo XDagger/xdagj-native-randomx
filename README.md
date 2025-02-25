@@ -175,9 +175,9 @@ public class Example {
 |           Benchmark            | Mode  | Cnt | Score   | Error  | Units |
 |:------------------------------:|:-----:|:---:|:-------:|:------:|:-----:|
 | RandomXBenchmark.lightBatch | thrpt |   | 328.736  |  | ops/s |
-| RandomXBenchmark.lightNoBatch | thrpt  |   | 325.383   |  | s/op  |
-| RandomXBenchmark.miningBatch | thrpt  |   | 2777.939   |  | s/op  |
-| RandomXBenchmark.miningNoBatch | thrpt  |   | 2817.811   |  | s/op  |
+| RandomXBenchmark.lightNoBatch | thrpt  |   | 325.383   |  | ops/s  |
+| RandomXBenchmark.miningBatch | thrpt  |   | 2777.939   |  | ops/s  |
+| RandomXBenchmark.miningNoBatch | thrpt  |   | 2817.811   |  | ops/s  |
 
 ---
 
@@ -194,9 +194,9 @@ JIT flag will cause jvm to crash in MacOS
 |           Benchmark            | Mode  | Cnt | Score   | Error  | Units |
 |:------------------------------:|:-----:|:---:|:-------:|:------:|:-----:|
 | RandomXBenchmark.lightBatch | thrpt |   | 32.864  |  | ops/s |
-| RandomXBenchmark.lightNoBatch | thrpt  |   | 33.683   |  | s/op  |
-| RandomXBenchmark.miningBatch | thrpt  |   | 554.966   |  | s/op  |
-| RandomXBenchmark.miningNoBatch | thrpt  |   | 570.060   |  | s/op  |
+| RandomXBenchmark.lightNoBatch | thrpt  |   | 33.683   |  | ops/s  |
+| RandomXBenchmark.miningBatch | thrpt  |   | 554.966   |  | ops/s  |
+| RandomXBenchmark.miningNoBatch | thrpt  |   | 570.060   |  | ops/s  |
 
 ---
 
