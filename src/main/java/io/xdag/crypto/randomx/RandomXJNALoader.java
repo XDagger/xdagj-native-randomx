@@ -77,7 +77,13 @@ public final class RandomXJNALoader {
             synchronized (LOCK) {
                 result = instance;
                 if (result == null) {
-                    instance = result = Native.load("randomx", RandomXJNA.class);
+                    String osName = System.getProperty("os.name").toLowerCase();
+                    if (osName.contains("win")) {
+                        String libFilePath = "native/librandomx_windows_x86_64.dll";
+                        instance = result = Native.load(libFilePath, RandomXJNA.class);
+                    } else {
+                        instance = result = Native.load("randomx", RandomXJNA.class);
+                    }
                 }
             }
         }
