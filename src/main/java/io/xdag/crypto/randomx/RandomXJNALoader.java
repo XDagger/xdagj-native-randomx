@@ -119,7 +119,9 @@ public final class RandomXJNALoader {
      */
     private static String getLibraryFileName(String libraryName, String os, String arch) {
         if (os.contains("win")) {
-            return String.format("native/%s_windows_%s.dll", libraryName, arch);
+            if (StringUtils.containsAny(arch, "amd64", "x86_64")) {
+                return String.format("native/%s_windows_x86_64.dll", libraryName);
+            }
         } else if (os.contains("mac")) {
             return String.format("native/%s_macos_%s.dylib", libraryName, arch);
         } else if (StringUtils.contains(os, "linux")) {
