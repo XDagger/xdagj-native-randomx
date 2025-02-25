@@ -60,4 +60,5 @@ public class RandomXVMTest {
             assertEquals(32, output.length, "Output size should be 32 bytes.");
         }
     }
+
 }
