@@ -40,4 +40,5 @@ public class RandomXJNALoaderTest {
     public void testLibraryLoading() {
         assertNotNull(RandomXJNALoader.getInstance(), "RandomXJNA instance should not be null.");
     }
+
 }

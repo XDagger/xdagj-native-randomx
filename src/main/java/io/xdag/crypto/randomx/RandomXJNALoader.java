@@ -77,7 +77,13 @@ public final class RandomXJNALoader {
             synchronized (LOCK) {
                 result = instance;
                 if (result == null) {
-                    instance = result = Native.load("randomx", RandomXJNA.class);
+                    String osName = System.getProperty("os.name").toLowerCase();
+                    if (osName.contains("win")) {
+                        String libFilePath = "native/librandomx_windows_x86_64.dll";
+                        instance = result = Native.load(libFilePath, RandomXJNA.class);
+                    } else {
+                        instance = result = Native.load("randomx", RandomXJNA.class);
+                    }
                 }
             }
         }
@@ -119,7 +125,9 @@ public final class RandomXJNALoader {
      */
     private static String getLibraryFileName(String libraryName, String os, String arch) {
         if (os.contains("win")) {
-            return String.format("native/%s_windows_%s.dll", libraryName, arch);
+            if (StringUtils.containsAny(arch, "amd64", "x86_64")) {
+                return String.format("native/%s_windows_x86_64.dll", libraryName);
+            }
         } else if (os.contains("mac")) {
             return String.format("native/%s_macos_%s.dylib", libraryName, arch);
         } else if (StringUtils.contains(os, "linux")) {
