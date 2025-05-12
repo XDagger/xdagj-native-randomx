@@ -87,7 +87,7 @@ jobs:
             cp -v librandomx.dylib ../../src/main/resources/native/${{ matrix.output_lib }}
             ls -la ../../src/main/resources/native/
           elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            cp -v randomx.dll ../../src/main/resources/native/${{ matrix.output_lib }}
+            cp -v librandomx.dll ../../src/main/resources/native/${{ matrix.output_lib }}
             ls -la ../../src/main/resources/native/
           fi
         shell: bash
