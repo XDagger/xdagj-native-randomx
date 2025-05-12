@@ -28,7 +28,7 @@ make -j$(sysctl -n hw.ncpu)
 mkdir -p ../../src/main/resources/native
 
 echo "📦 Copying library to resources directory..."
-cp -v librandomx.dylib ../../src/main/resources/native/librandomx_macos_aarch64.dylib
+cp -vf librandomx.dylib ../../src/main/resources/native/librandomx_macos_aarch64.dylib
 
 echo "✅ Build complete!"
 echo "Library location: src/main/resources/native/librandomx_macos_aarch64.dylib"
