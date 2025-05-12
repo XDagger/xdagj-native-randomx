@@ -40,6 +40,8 @@ Support the project with XDAG donations:
 
 - **JDK**: v17 or later
 - **Maven**: v3.9.9 or later
+- **CMake**: v3.5 or later
+- **GCC/Compiler**: GCC v4.8 or later (v7+ recommended for best performance)
 
 ### **2. Build Steps**
 
@@ -73,12 +75,19 @@ make -j4
 cp -i librandomx.dylib ../../src/main/resources/native/librandomx_macos_x86_64.dylib
 ```
 
-##### **macOS aarch64**
+##### **macOS aarch64 (Apple Silicon)**
+For Apple Silicon Macs (M1, M2, M3), use the provided script:
+```bash
+# Run from the project root
+./scripts/build-macos-arm64.sh
+```
+
+Or manually:
 ```bash
 cd randomx
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON
-make -j4
+make -j$(sysctl -n hw.ncpu)
 cp -i librandomx.dylib ../../src/main/resources/native/librandomx_macos_aarch64.dylib
 ```
 
@@ -90,6 +99,7 @@ cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_S
 make -j4
 cp -i randomx.dll ../../src/main/resources/native/librandomx_windows_x86_64.dll
 ```
+You can also compile using Visual Studio, as the official RandomX repository provides solution files.
 
 #### **2.3 Compile Java Library**
 ```bash
@@ -203,6 +213,18 @@ JIT flag will cause jvm to crash in MacOS
 ## Contribution
 
 We welcome contributions to improve the project! Please feel free to submit issues or pull requests.
+
+### **Contributing to the library**
+
+If you're submitting changes that might affect the native libraries:
+
+1. For platform-specific changes, compile the native library for your platform:
+   * Linux x86_64, macOS x86_64, or Windows x86_64: Follow the compilation steps above.
+   * macOS aarch64 (Apple Silicon): Must be compiled on an Apple Silicon Mac using provided script.
+
+2. Commit both your code changes and the updated native library files.
+
+3. GitHub Actions will build for other platforms and generate a complete multi-platform JAR.
 
 For discussions or questions, contact the [xdagj community](https://github.com/XDagger/xdagj).
 
