@@ -23,6 +23,7 @@
  */
 package io.xdag.crypto.randomx;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,8 +32,10 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 import java.util.Set;
+import java.util.EnumSet;
+import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for RandomX hash calculation functionality.
@@ -41,24 +44,50 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class RandomXTests {
     private RandomXTemplate template;
     private HexFormat hex;
+    private RandomXCache cache;
+    private RandomXDataset dataset;
 
     /**
      * Sets up the test environment before each test.
-     * Initializes RandomX template with cache and dataset.
+     * Initializes RandomX template for light mode operations.
      */
     @BeforeEach
     public void setUp() {
-        Set<RandomXFlag> flagsSet = RandomXUtils.getFlagsSet();
-        RandomXCache cache = new RandomXCache(flagsSet);
-        RandomXDataset dataset = new RandomXDataset(flagsSet);
+        Set<RandomXFlag> flags = RandomXUtils.getRecommendedFlags();
+        assertNotNull(flags, "Flags should not be null in setUp");
+
+        // For these tests, which are light-mode (non-mining), a dataset is not strictly necessary
+        // for the template's operation. We will initialize the cache only.
+        cache = new RandomXCache(flags);
+        // this.dataset = new RandomXDataset(flags); // Not creating dataset for light mode tests
+        this.dataset = null; // Explicitly null
+
         template = RandomXTemplate.builder()
                 .cache(cache)
-                .dataset(dataset)
+                .dataset(null) // Explicitly pass null for dataset in light mode
                 .miningMode(false)
-                .flags(flagsSet)
+                .flags(flags)
                 .build();
         template.init();
         hex = HexFormat.of();
+    }
+
+    @AfterEach
+    public void tearDown() {
+        if (template != null) {
+            template.close();
+            template = null;
+        }
+        if (cache != null) {
+            cache.close();
+            cache = null;
+        }
+        // Since this.dataset is now explicitly set to null or not created in setUp for these tests,
+        // this check will correctly skip closing a null dataset.
+        if (dataset != null) { 
+            dataset.close();
+            dataset = null;
+        }
     }
 
     /**
@@ -93,7 +122,7 @@ public class RandomXTests {
         byte[] inputBytes = input.getBytes(StandardCharsets.UTF_8);
 
         template.changeKey(keyBytes);
-        assertEquals(output, hex.formatHex(template.calcStringCommitment(inputBytes)));
+        assertEquals(output, hex.formatHex(template.calculateCommitment(inputBytes)));
     }
 
     /**

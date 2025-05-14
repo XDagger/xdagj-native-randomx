@@ -40,34 +40,32 @@ public class Example {
      * @param args Command line arguments (not used)
      */
     public static void main(String[] args) {
-        // Key to be hashed
+        // Key (or message) to be hashed
         String key = "hello xdagj-native-randomx";
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+        System.out.println("Input message: " + key);
 
-        // Get supported RandomX flags for the current CPU
-        Set<RandomXFlag> flags = RandomXUtils.getFlagsSet();
-        System.out.println("Supported flags: " + flags);
-        int combinedFlags = RandomXFlag.toValue(flags);
-        System.out.println("Combined flags value: " + combinedFlags);
+        // Get recommended RandomX flags for the current CPU
+        Set<RandomXFlag> flags = RandomXUtils.getRecommendedFlags();
 
-        // Initialize RandomX cache with the supported flags
+        // Allocate RandomX cache with the recommended flags
         RandomXCache cache = new RandomXCache(flags);
+        
+        // Initialize the cache with the key. This step is crucial before using the cache.
         cache.init(keyBytes);
 
-        // Create and configure RandomXTemplate using builder pattern
+        // Create and configure RandomXTemplate using a builder pattern
         byte[] hash;
         try (RandomXTemplate template = RandomXTemplate.builder()
-                .cache(cache)
-                .miningMode(false)  // Set to false for normal hashing mode
-                .flags(flags)
+                .cache(cache) // Provide the initialized cache
+                .miningMode(false)  // Set to false for light hashing mode (no dataset)
+                .flags(flags)       // Provide the base flags
                 .build()) {
-
-            // Initialize the template with the configured settings
+            
+            // Initialize the template. This creates the VM.
             template.init();
-
-            // Calculate hash of the input key
             hash = template.calculateHash(keyBytes);
-        }
+        } // try-with-resources automatically calls template.close()
 
         // Format and display the results
         HexFormat hex = HexFormat.of();
