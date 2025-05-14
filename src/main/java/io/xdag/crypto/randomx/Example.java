@@ -49,19 +49,20 @@ public class Example {
         Set<RandomXFlag> flags = RandomXUtils.getRecommendedFlags();
 
         // Allocate RandomX cache with the recommended flags
+        // The key will be set and cache initialized via RandomXTemplate
         RandomXCache cache = new RandomXCache(flags);
-        
-        // Initialize the cache with the key. This step is crucial before using the cache.
-        cache.init(keyBytes);
 
         // Create and configure RandomXTemplate using a builder pattern
         byte[] hash;
         try (RandomXTemplate template = RandomXTemplate.builder()
-                .cache(cache) // Provide the initialized cache
+                .cache(cache) // Provide the cache instance (not yet initialized with key)
                 .miningMode(false)  // Set to false for light hashing mode (no dataset)
                 .flags(flags)       // Provide the base flags
                 .build()) {
             
+            // Set the key for RandomX operations. This will initialize the cache.
+            template.changeKey(keyBytes);
+
             // Initialize the template. This creates the VM.
             template.init();
             hash = template.calculateHash(keyBytes);

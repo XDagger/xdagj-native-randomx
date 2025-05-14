@@ -115,7 +115,7 @@ To include `xdagj-native-randomx` in your project, add the following dependency 
 <dependency>
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-native-randomx</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.2</version>
 </dependency>
 ```
 
@@ -138,27 +138,27 @@ public class Example {
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
 
         // Get supported RandomX flags for the current CPU
-        Set<RandomXFlag> flags = RandomXUtils.getFlagsSet();
+        Set<RandomXFlag> flags = RandomXUtils.getRecommendedFlags();
         System.out.println("Supported flags: " + flags);
-        int combinedFlags = RandomXFlag.toValue(flags);
-        System.out.println("Combined flags value: " + combinedFlags);
 
-        // Initialize RandomX cache with the supported flags
+        // Initialize RandomX cache (key will be set via template)
         RandomXCache cache = new RandomXCache(flags);
-        cache.init(keyBytes);
 
         // Create and configure RandomXTemplate using builder pattern
         byte[] hash;
         try (RandomXTemplate template = RandomXTemplate.builder()
                 .cache(cache)
-                .miningMode(false)  // Set to false for normal hashing mode
+                .miningMode(false)
                 .flags(flags)
                 .build()) {
 
-            // Initialize the template with the configured settings
+            // Set the key for RandomX operations. This will initialize the cache.
+            template.changeKey(keyBytes);
+
+            // Initialize the template's VM with the configured settings
             template.init();
 
-            // Calculate hash of the input key
+            // Calculate hash of the input
             hash = template.calculateHash(keyBytes);
         }
 
@@ -184,10 +184,10 @@ public class Example {
 ### Linux Performance Results
 |           Benchmark            | Mode  | Cnt | Score   | Error  | Units |
 |:------------------------------:|:-----:|:---:|:-------:|:------:|:-----:|
-| RandomXBenchmark.lightBatch | thrpt |   | 328.736  |  | ops/s |
-| RandomXBenchmark.lightNoBatch | thrpt  |   | 325.383   |  | ops/s  |
-| RandomXBenchmark.miningBatch | thrpt  |   | 2777.939   |  | ops/s  |
-| RandomXBenchmark.miningNoBatch | thrpt  |   | 2817.811   |  | ops/s  |
+| RandomXBenchmark.lightBatch    | thrpt |   | 416.114  |  | ops/s |
+| RandomXBenchmark.lightNoBatch  | thrpt  |   | 424.865   |  | ops/s  |
+| RandomXBenchmark.miningBatch   | thrpt  |   | 1818.991   |  | ops/s  |
+| RandomXBenchmark.miningNoBatch | thrpt  |   | 2191.774   |  | ops/s  |
 
 ---
 
@@ -196,17 +196,15 @@ public class Example {
 - **CPU**: Apple M3 Pro
 - **RAM**: 36 GB
 - **thread**: 8
-- **RandomX Flags**: [DEFAULT, HARD_AES, SECURE]
-
-JIT flag will cause jvm to crash in MacOS
+- **RandomX Flags**: [DEFAULT, JIT, SECURE]
 
 ### MacOS Performance Results
-|           Benchmark            | Mode  | Cnt | Score   | Error  | Units |
-|:------------------------------:|:-----:|:---:|:-------:|:------:|:-----:|
-| RandomXBenchmark.lightBatch | thrpt |   | 32.864  |  | ops/s |
-| RandomXBenchmark.lightNoBatch | thrpt  |   | 33.683   |  | ops/s  |
-| RandomXBenchmark.miningBatch | thrpt  |   | 554.966   |  | ops/s  |
-| RandomXBenchmark.miningNoBatch | thrpt  |   | 570.060   |  | ops/s  |
+|           Benchmark            | Mode  | Cnt | Score    | Error  | Units |
+|:------------------------------:|:-----:|:---:|:--------:|:------:|:-----:|
+| RandomXBenchmark.lightBatch    | thrpt |   | 416.114  |        | ops/s |
+| RandomXBenchmark.lightNoBatch  | thrpt |   | 424.865  |        | ops/s |
+| RandomXBenchmark.miningBatch   | thrpt |   | 1818.991 |        | ops/s |
+| RandomXBenchmark.miningNoBatch | thrpt |   | 2191.774 |        | ops/s |
 
 ---
 
