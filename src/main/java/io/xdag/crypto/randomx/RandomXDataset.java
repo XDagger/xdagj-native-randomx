@@ -36,71 +36,83 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * A class that encapsulates the RandomX dataset functionality with multi-threaded initialization support.
- * This class manages the allocation, initialization and release of RandomX dataset memory.
- * It implements AutoCloseable to ensure proper resource cleanup.
+ * Encapsulates the RandomX dataset functionality with multi-threaded initialization support.
+ * Manages the allocation, initialization, and release of RandomX datasets, with support for multi-threaded initialization.
+ * This class implements AutoCloseable for resource management.
+ * Implement the AutoCloseable interface for resource management.
  */
+@Slf4j
 public class RandomXDataset implements AutoCloseable {
 
-    private static final Logger logger = LoggerFactory.getLogger(RandomXDataset.class);
-
     /**
-     * Pointer to the allocated RandomX dataset memory
+     * Pointer to the allocated RandomX dataset memory.
      */
-    private final Pointer dataset;
+    private final Pointer datasetPointer;
+
+    @Getter
+    private final Set<RandomXFlag> flags; // Store flags used for allocation
 
     /**
-     * Constructs a new RandomXDataset with the specified flags.
-     * Allocates memory for the dataset using the native RandomX library.
+     * Constructs a new RandomXDataset and allocates memory for it.
      *
-     * @param flags Set of RandomXFlag values that configure the dataset behavior
-     * @throws IllegalStateException if dataset allocation fails
+     * @param flags Set of RandomXFlag values used to configure the dataset behavior.
+     * @throws RuntimeException if dataset allocation fails.
      */
     public RandomXDataset(Set<RandomXFlag> flags) {
         if (flags == null || flags.isEmpty()) {
-            throw new IllegalArgumentException("Flags cannot be null or empty");
+            throw new IllegalArgumentException("Flags cannot be null or empty for dataset allocation.");
         }
-        
+        this.flags = flags;
         int combinedFlags = RandomXFlag.toValue(flags);
-        this.dataset = RandomXJNALoader.getInstance().randomx_alloc_dataset(combinedFlags);
-        
-        if (dataset == null) {
-            throw new IllegalStateException("Failed to allocate RandomX dataset");
+        log.debug("Allocating RandomX dataset with flags: {} ({})", flags, combinedFlags);
+
+        // Use RandomXNative for allocation
+        this.datasetPointer = RandomXNative.randomx_alloc_dataset(combinedFlags);
+
+        if (datasetPointer == null) {
+            String errorMsg = String.format("Failed to allocate RandomX dataset with flags: %s (%d)", flags, combinedFlags);
+            log.error(errorMsg);
+            throw new RuntimeException(errorMsg); // Use RuntimeException
         }
-        
-        logger.debug("RandomX dataset allocated successfully with flags: {}", flags);
+
+        log.info("RandomX dataset allocated successfully at pointer: {} with flags: {}", Pointer.nativeValue(datasetPointer), flags);
     }
 
     /**
      * Initializes the dataset using multiple threads.
-     * The initialization work is divided equally among threads based on available CPU cores.
-     * Each thread initializes its assigned portion of the dataset items.
+     * The initialization work is divided among threads based on available CPU cores.
      *
-     * @param cache The RandomXCache instance used to initialize the dataset
-     * @throws RuntimeException if the initialization is interrupted
+     * @param cache The RandomXCache instance required for dataset initialization.
+     * @throws RuntimeException if initialization is interrupted or fails.
+     * @throws IllegalStateException if the dataset is not allocated.
      */
     public void init(RandomXCache cache) {
-        if (cache == null) {
-            throw new IllegalArgumentException("Cache cannot be null");
+        if (datasetPointer == null) {
+            throw new IllegalStateException("Dataset is not allocated.");
         }
-        
+        if (cache == null || cache.getCachePointer() == null) {
+            throw new IllegalArgumentException("Valid cache instance with allocated cache pointer is required for dataset initialization.");
+        }
+
         long startTime = System.nanoTime();
-        
-        // Get total items count
-        long totalItems = RandomXJNALoader.getInstance().randomx_dataset_item_count().longValue();
-        
-        // Calculate optimal thread count
+
+        // Get total items count using RandomXNative
+        long totalItems = RandomXNative.randomx_dataset_item_count().longValue();
+        if (totalItems <= 0) {
+             log.warn("RandomX dataset item count is zero or negative ({}). Skipping initialization.", totalItems);
+             return; // No items to initialize
+        }
+
+        // Calculate optimal thread count (using half of available processors by default)
         int availableProcessors = Runtime.getRuntime().availableProcessors();
-        // Default to half of available processors, but can be configured
         int initThreadCount = Math.max(1, availableProcessors / 2);
-        
-        logger.info("Initializing dataset with {} threads for {} items", initThreadCount, totalItems);
-        
-        // Create thread pool
+        log.info("Initializing dataset ({} items) using {} threads.", totalItems, initThreadCount);
+
+        // Create thread pool with custom thread factory for naming
         ExecutorService executor = Executors.newFixedThreadPool(initThreadCount, new ThreadFactory() {
             private final AtomicInteger threadNumber = new AtomicInteger(1);
             @Override
@@ -113,66 +125,74 @@ public class RandomXDataset implements AutoCloseable {
         });
 
         try {
-            // Calculate items per thread - ensure even distribution
-            long perThread = totalItems / initThreadCount;
+            // Calculate items per thread and handle remainder
+            long itemsPerThread = totalItems / initThreadCount;
             long remainder = totalItems % initThreadCount;
             List<Future<?>> futures = new ArrayList<>(initThreadCount);
-            
-            // Submit initialization tasks
-            long startItem = 0;
-            for (int i = 0; i < initThreadCount; i++) {
-                // Add remainder items to the last thread
-                long itemCount = perThread + (i == initThreadCount - 1 ? remainder : 0);
-                final long start = startItem;
-                final long count = itemCount;
-                
-                futures.add(executor.submit(() -> {
-                    try {
-                        logger.debug("Thread {} initializing items [{}, {})", 
-                                Thread.currentThread().getName(), start, start + count);
+            long currentItemStart = 0;
 
-                        RandomXJNALoader.getInstance().randomx_init_dataset(
-                                dataset,
-                                cache.getCachePointer(),
+            // Submit initialization tasks for each thread
+            for (int i = 0; i < initThreadCount; i++) {
+                long itemCount = itemsPerThread + (i < remainder ? 1 : 0); // Distribute remainder evenly
+                if (itemCount == 0) continue; // Skip threads with no work
+
+                final long start = currentItemStart;
+                final long count = itemCount;
+                final Pointer cachePtr = cache.getCachePointer(); // Pass cache pointer explicitly
+
+                futures.add(executor.submit(() -> {
+                    String threadName = Thread.currentThread().getName();
+                    try {
+                        log.debug("{} starting initialization for items [{}, {})", threadName, start, start + count);
+                        // Use RandomXNative for dataset initialization
+                        RandomXNative.randomx_init_dataset(
+                                datasetPointer,
+                                cachePtr,
                                 new NativeLong(start),
                                 new NativeLong(count)
                         );
-                        
-                        logger.debug("Thread {} completed initialization of {} items", 
-                                Thread.currentThread().getName(), count);
+                        log.debug("{} finished initialization for items [{}, {})", threadName, start, start + count);
                     } catch (Exception e) {
-                        logger.error("Dataset initialization failed for range [{}, {})", start, start + count, e);
-                        throw new RuntimeException("Dataset initialization failed", e);
+                        log.error("{} failed during initialization for items [{}, {}). Error: {}",
+                                     threadName, start, start + count, e.getMessage(), e);
+                        // Propagate exception to be caught by future.get()
+                        throw new RuntimeException("Dataset initialization failed in thread " + threadName, e);
                     }
                 }));
-                
-                startItem += itemCount;
+                currentItemStart += itemCount;
             }
-            
-            // Wait for all threads to complete
+
+            // Wait for all threads to complete and check for exceptions
             for (Future<?> future : futures) {
                 try {
-                    future.get();
+                    future.get(); // Throws ExecutionException if the task threw an exception
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    Thread.currentThread().interrupt(); // Preserve interrupt status
+                    log.error("Dataset initialization interrupted.", e);
                     throw new RuntimeException("Dataset initialization interrupted", e);
                 } catch (ExecutionException e) {
+                    log.error("Dataset initialization failed.", e.getCause());
+                    // Unwrap the original exception thrown by the task
                     throw new RuntimeException("Dataset initialization failed", e.getCause());
                 }
             }
-            
-            long duration = (System.nanoTime() - startTime) / 1_000_000;
-            logger.info("Dataset initialization completed in {} ms", duration);
-            
+
+            long durationMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+            log.info("Dataset initialization completed successfully in {} ms.", durationMillis);
+
         } finally {
+            // Shutdown executor service gracefully
             executor.shutdown();
             try {
-                if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
+                // Wait a reasonable time for tasks to finish
+                if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                    log.warn("Executor did not terminate in 60 seconds. Forcing shutdown.");
                     executor.shutdownNow();
                 }
             } catch (InterruptedException e) {
+                log.error("Interrupted while waiting for executor termination.", e);
                 executor.shutdownNow();
-                Thread.currentThread().interrupt();
+                Thread.currentThread().interrupt(); // Preserve interrupt status
             }
         }
     }
@@ -180,21 +200,31 @@ public class RandomXDataset implements AutoCloseable {
     /**
      * Gets the pointer to the allocated dataset memory.
      *
-     * @return Pointer to the dataset memory
+     * @return Pointer to the dataset memory.
+     * @throws IllegalStateException if the dataset is not allocated.
      */
-    public Pointer getPointer() {
-        return dataset;
+    public Pointer getDatasetPointer() {
+        if (datasetPointer == null) {
+            throw new IllegalStateException("Dataset is not allocated.");
+        }
+        return datasetPointer;
     }
 
-    /**
+  /**
      * Releases the allocated dataset memory.
      * This method is called automatically when using try-with-resources.
      */
     @Override
     public void close() {
-        if (dataset != null) {
-            RandomXJNALoader.getInstance().randomx_release_dataset(dataset);
-            logger.debug("RandomX dataset released successfully");
+        if (datasetPointer != null) {
+            log.debug("Releasing RandomX dataset at pointer: {}", Pointer.nativeValue(datasetPointer));
+            try {
+                // Use RandomXNative for release
+                RandomXNative.randomx_release_dataset(datasetPointer);
+                log.info("RandomX dataset released successfully.");
+            } catch (Throwable t) {
+                log.error("Error occurred while releasing RandomX dataset. Pointer: {}", Pointer.nativeValue(datasetPointer), t);
+            }
         }
     }
 }
