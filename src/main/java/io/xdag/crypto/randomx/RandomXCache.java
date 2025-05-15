@@ -26,119 +26,108 @@ package io.xdag.crypto.randomx;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+import java.io.Closeable;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * A class that encapsulates the RandomX cache functionality.
- * This class manages the allocation, initialization and release of RandomX cache memory.
- * It implements AutoCloseable to ensure proper resource cleanup.
+ * Represents a RandomX Cache object.
+ * This class manages the allocation, initialization, and release of the native RandomX cache structure.
  */
-@Getter
-public class RandomXCache implements AutoCloseable {
-    private static final Logger logger = LoggerFactory.getLogger(RandomXCache.class);
-    
-    /**
-     * Pointer to the allocated RandomX cache memory.
-     * -- GETTER --
-     * Returns the pointer to the allocated cache memory.
-     */
-    @Getter
+@Slf4j
+public class RandomXCache implements Closeable {
     private final Pointer cachePointer;
-    
-    /**
-     * Pointer to the key used for cache initialization
-     */
-    private volatile Pointer keyPointer;
-    private int keyLength;
-    private final ReentrantLock lock = new ReentrantLock();
+    @Getter
+    private final Set<RandomXFlag> flags;
 
     /**
-     * Constructs a new RandomXCache with the specified flags.
-     * Allocates memory for the cache using the native RandomX library.
+     * Allocates a new RandomX cache.
      *
-     * @param flags Set of RandomXFlag values that configure the cache behavior
-     * @throws IllegalArgumentException if flags is null or empty
-     * @throws IllegalStateException if cache allocation fails
+     * @param flags Flags used to initialize the cache.
+     * @throws RuntimeException if cache allocation fails.
      */
     public RandomXCache(Set<RandomXFlag> flags) {
-        if (flags == null || flags.isEmpty()) {
-            throw new IllegalArgumentException("Flags cannot be null or empty");
-        }
-        
+        this.flags = flags;
         int combinedFlags = RandomXFlag.toValue(flags);
-        logger.debug("Allocating RandomX cache with flags: {}", flags);
-        
-        this.cachePointer = RandomXJNALoader.getInstance().randomx_alloc_cache(combinedFlags);
+        log.debug("Allocating RandomX cache with flags: {} ({})", flags, combinedFlags);
+        // Use RandomXNative for allocation
+        this.cachePointer = RandomXNative.randomx_alloc_cache(combinedFlags);
         if (this.cachePointer == null) {
-            throw new IllegalStateException("Failed to allocate RandomX cache");
+            String errorMsg = String.format("Failed to allocate RandomX cache with flags: %s (%d)", flags, combinedFlags);
+            log.error(errorMsg);
+            throw new RuntimeException(errorMsg);
         }
-        
-        logger.debug("RandomX cache allocated successfully");
+        log.info("RandomX cache allocated successfully at pointer: {}", Pointer.nativeValue(this.cachePointer));
     }
 
     /**
-     * Initializes the cache with the provided key.
-     * This method is thread-safe and can be called multiple times with different keys.
+     * Initializes the RandomX cache with the specified key.
      *
-     * @param key byte array containing the key data
-     * @throws IllegalArgumentException if key is null or empty
+     * @param key Key (seed) used to initialize the cache.
+     * @throws RuntimeException if cache initialization fails.
+     * @throws IllegalStateException if the cache is not allocated.
      */
     public void init(byte[] key) {
+        if (cachePointer == null) {
+            throw new IllegalStateException("Cache is not allocated.");
+        }
         if (key == null || key.length == 0) {
-            throw new IllegalArgumentException("Key cannot be null or empty");
+            throw new IllegalArgumentException("Key cannot be null or empty for cache initialization.");
         }
 
-        lock.lock();
+        // Use JNA Memory to manage native memory
+        Memory keyPointer = new Memory(key.length);
         try {
-            long startTime = System.nanoTime();
-            logger.debug("Initializing cache with key length: {}", key.length);
-            
-            // Free old key pointer if exists
-            if (keyPointer != null) {
-                keyPointer.clear(keyLength);
-            }
-            
-            // Allocate and initialize new key
-            keyLength = key.length;
-            keyPointer = new Memory(key.length);
             keyPointer.write(0, key, 0, key.length);
-            
-            RandomXJNALoader.getInstance().randomx_init_cache(
-                this.cachePointer,
-                keyPointer,
-                key.length
+            log.debug("Initializing RandomX cache with key of length: {}", key.length);
+            // Use RandomXNative for initialization
+            RandomXNative.randomx_init_cache(
+                    this.cachePointer,
+                    keyPointer,
+                    key.length
             );
-            
-            long endTime = System.nanoTime();
-            logger.debug("Cache initialization completed in {} ms", (endTime - startTime) / 1_000_000);
+            log.info("RandomX cache initialized successfully.");
+        } catch (Exception e) {
+            log.error("Failed to initialize RandomX cache", e);
+            // Even if initialization fails, attempt to release memory
+            close(); // Release cachePointer
+            throw new RuntimeException("Failed to initialize RandomX cache", e);
         } finally {
-            lock.unlock();
+            // Memory objects do not need to be manually released; JNA's GC will handle it,
+            // but nullifying the reference immediately might help GC reclaim it faster.
+            keyPointer = null; // Help GC
         }
     }
 
     /**
-     * Releases the allocated cache memory and key memory.
-     * This method is thread-safe and idempotent.
+     * Gets the pointer to the underlying native RandomX cache structure.
+     *
+     * @return Pointer to the native cache.
+     * @throws IllegalStateException if the cache is not allocated.
+     */
+    public Pointer getCachePointer() {
+        if (cachePointer == null) {
+            throw new IllegalStateException("Cache is not allocated.");
+        }
+        return cachePointer;
+    }
+
+    /**
+     * Releases the resources occupied by the native RandomX cache.
+     * This method should be called after finishing with the cache to prevent memory leaks.
      */
     @Override
     public void close() {
-        lock.lock();
-        try {
-            if (keyPointer != null) {
-                keyPointer.clear(keyLength);
-                keyPointer = null;
+        if (cachePointer != null) {
+            log.debug("Releasing RandomX cache at pointer: {}", Pointer.nativeValue(cachePointer));
+            try {
+                // Use RandomXNative for release
+                RandomXNative.randomx_release_cache(cachePointer);
+                log.info("RandomX cache released successfully");
+            } catch (Throwable t) {
+                log.error("Error occurred while releasing RandomX cache. Pointer: {}", Pointer.nativeValue(cachePointer), t);
             }
-            
-            if (cachePointer != null) {
-                RandomXJNALoader.getInstance().randomx_release_cache(cachePointer);
-                logger.debug("RandomX cache released successfully");
-            }
-        } finally {
-            lock.unlock();
         }
     }
 }

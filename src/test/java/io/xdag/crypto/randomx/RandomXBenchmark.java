@@ -50,6 +50,9 @@ public class RandomXBenchmark {
 
     private static final Logger logger = LoggerFactory.getLogger(RandomXBenchmark.class);
 
+    @Param({"NO_JIT", "JIT"}) // Parameter for controlling JIT flag
+    public String compilationMode;
+
     // Sample block template for hash calculation
     private static final byte[] BLOCK_TEMPLATE = {
             (byte)0x07, (byte)0x07, (byte)0xf7, (byte)0xa4, (byte)0xf0, (byte)0xd6, (byte)0x05, (byte)0xb3,
@@ -109,15 +112,56 @@ public class RandomXBenchmark {
      */
     @Setup(Level.Trial)
     public void setup() {
-        logger.info("Setting up shared resources");
-        flags = RandomXUtils.getFlagsSet();
+        logger.info("Setting up shared resources for RandomXBenchmark");
+        
+        Set<RandomXFlag> baseFlags = RandomXUtils.getRecommendedFlags(); // Get base recommended flags
 
-        cache = new RandomXCache(flags);
-        cache.init(BLOCK_TEMPLATE);
+        logger.info("Base recommended flags: {}", baseFlags);
 
-        dataset = new RandomXDataset(flags);
+        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        boolean isMac = osName.contains("mac");
 
-        logger.info("Shared resources setup completed");
+        if ("JIT".equals(compilationMode)) {
+            logger.info("Compilation Mode: JIT selected. Enabling JIT flag.");
+            baseFlags.add(RandomXFlag.JIT);
+
+            if (isMac) {
+                logger.info("On macOS, ensuring SECURE flag is also enabled when JIT is selected, as per user observation.");
+                baseFlags.add(RandomXFlag.SECURE); // Ensure SECURE is present for JIT on macOS
+            } else {
+                // For non-macOS systems, if SECURE is present and potentially conflicts with JIT,
+                // it might be safer to remove SECURE when JIT is prioritized.
+                if (baseFlags.contains(RandomXFlag.SECURE)) {
+                    logger.warn("JIT and SECURE flags may be incompatible on non-macOS. Removing SECURE flag as JIT is prioritized for this mode.");
+                    baseFlags.remove(RandomXFlag.SECURE);
+                }
+            }
+        } else { // NO_JIT or any other value
+            logger.info("Compilation Mode: NO_JIT selected. Ensuring JIT flag is disabled.");
+            baseFlags.remove(RandomXFlag.JIT);
+            // If not using JIT, SECURE flag (if recommended by getRecommendedFlags()) should typically be kept.
+            // No specific action needed here for SECURE if getRecommendedFlags() already handles it well for NO_JIT.
+        }
+
+        this.flags = EnumSet.copyOf(baseFlags); // Use a defensive copy
+        logger.info("Benchmark (compilationMode={}) will use final flags for VMs and Cache: {}", compilationMode, this.flags);
+
+        cache = new RandomXCache(this.flags);
+        cache.init(BLOCK_TEMPLATE); 
+        logger.info("Shared RandomXCache initialized with BLOCK_TEMPLATE using flags: {}", this.flags);
+
+        Set<RandomXFlag> datasetAllocFlags = EnumSet.noneOf(RandomXFlag.class);
+        datasetAllocFlags.add(RandomXFlag.FULL_MEM); 
+
+        if (this.flags.contains(RandomXFlag.LARGE_PAGES)) {
+            datasetAllocFlags.add(RandomXFlag.LARGE_PAGES);
+            logger.info("LARGE_PAGES flag detected in VM/Cache flags, adding it to dataset allocation flags.");
+        }
+        
+        dataset = new RandomXDataset(datasetAllocFlags); 
+        logger.info("Shared RandomXDataset allocated with specific dataset allocation flags: {}. It will be initialized by ThreadState if mining mode is used.", datasetAllocFlags);
+
+        logger.info("Shared resources setup completed for RandomXBenchmark.");
     }
 
     /**

@@ -6,7 +6,7 @@
 
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-native-randomx</artifactId>
-    <version>0.2.1</version>
+    <version>0.2.2</version>
 
     <name>xdagj-native-randomx</name>
     <description>A Java RandomX Library For XDAGJ</description>
@@ -22,10 +22,10 @@
         
         <!-- Dependency versions -->
         <commons-lang3.version>3.17.0</commons-lang3.version>
-        <jna.version>5.15.0</jna.version>
-        <lombok.version>1.18.34</lombok.version>
-        <slf4j.version>2.0.16</slf4j.version>
-        <junit.version>5.10.3</junit.version>
+        <jna.version>5.17.0</jna.version>
+        <lombok.version>1.18.38</lombok.version>
+        <slf4j.version>2.0.17</slf4j.version>
+        <junit.version>5.12.2</junit.version>
         <jmh.version>1.37</jmh.version>
         
         <!-- Plugin versions -->

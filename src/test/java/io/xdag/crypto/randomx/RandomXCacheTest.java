@@ -26,7 +26,6 @@ package io.xdag.crypto.randomx;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class RandomXCacheTest {
 
-    private final Set<RandomXFlag> flagsSet = RandomXUtils.getFlagsSet();
     private final byte[] keyBytes = "test_key".getBytes(StandardCharsets.UTF_8);
 
     /**
@@ -45,7 +43,7 @@ public class RandomXCacheTest {
      */
     @Test
     public void testAllocAndRelease() {
-        try (RandomXCache cache = new RandomXCache(flagsSet)) {
+        try (RandomXCache cache = new RandomXCache(RandomXUtils.getRecommendedFlags())) {
             assertNotNull(cache.getCachePointer(), "Cache pointer should not be null.");
         } // Cache is automatically released here.
     }
@@ -56,7 +54,7 @@ public class RandomXCacheTest {
      */
     @Test
     public void testInit() {
-        try (RandomXCache cache = new RandomXCache(flagsSet)) {
+        try (RandomXCache cache = new RandomXCache(RandomXUtils.getRecommendedFlags())) {
             assertNotNull(cache.getCachePointer(), "Cache pointer should not be null.");
             cache.init(keyBytes);
         } // Cache is automatically released here.
