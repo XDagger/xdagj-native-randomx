@@ -138,11 +138,22 @@ final class RandomXLibraryLoader {
             }
             
             String mappedLibName = System.mapLibraryName(libraryLogicalName);
-            String tempFilePrefix = mappedLibName.substring(0, mappedLibName.lastIndexOf('.'));
-            String tempFileSuffix = mappedLibName.substring(mappedLibName.lastIndexOf('.'));
+            File tempFile;
 
-            tempFilePath = Files.createTempFile(tempFilePrefix + "-", tempFileSuffix);
-            File tempFile = tempFilePath.toFile();
+            if (os.contains("win")) {
+                // Use a fixed file name under Windows: randomx.dll
+                Path tempDir = Files.createTempDirectory("randomx-");
+                tempDir.toFile().deleteOnExit();
+                tempFilePath = tempDir.resolve("randomx.dll"); // Fixed name
+            } else {
+                // Linux and macOS uses the default temporary files policy
+                String tempFilePrefix = mappedLibName.substring(0, mappedLibName.lastIndexOf('.'));
+                String tempFileSuffix = mappedLibName.substring(mappedLibName.lastIndexOf('.'));
+                tempFilePath = Files.createTempFile(tempFilePrefix + "-", tempFileSuffix);
+            }
+
+            tempFile = tempFilePath.toFile();
+
             tempFile.deleteOnExit();
             
             Files.copy(libStream, tempFilePath, StandardCopyOption.REPLACE_EXISTING);
