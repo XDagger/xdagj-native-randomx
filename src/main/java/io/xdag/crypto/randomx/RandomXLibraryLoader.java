@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 final class RandomXLibraryLoader {
 
     private static boolean isLoaded = false;
-    private static String loadedLibraryPath = null; // Store the path of the loaded library for logging
+    private static Path loadedLibraryPath = null; // Store the path of the loaded library
 
     // Private constructor to prevent instantiation
     private RandomXLibraryLoader() {}
@@ -53,16 +53,19 @@ final class RandomXLibraryLoader {
      *
      * @throws UnsatisfiedLinkError if the library cannot be loaded for any reason.
      * @throws Exception for other unexpected errors during loading.
+     * @return Path to the loaded native library file, or null if already loaded or failed before critical point.
      */
-    public static synchronized void load() throws Exception {
+    public static synchronized Path load() throws Exception {
         if (isLoaded) {
             log.info("Native library already loaded from: {}", loadedLibraryPath);
-            return;
+            return loadedLibraryPath; // Return cached path
         }
 
+        Path tempLibFilePath = null;
         try {
-            File tempFile = extractAndLoadNativeLibrary();
-            loadedLibraryPath = tempFile.getAbsolutePath();
+            File tempFile = extractAndLoadNativeLibrary(); // This method now returns File
+            tempLibFilePath = tempFile.toPath();
+            loadedLibraryPath = tempLibFilePath; // Cache the path
 
             String tempLibDir = tempFile.getParent();
             if (tempLibDir != null) {
@@ -79,10 +82,12 @@ final class RandomXLibraryLoader {
 
             isLoaded = true;
             log.info("RandomX native library loaded successfully via RandomXLibraryLoader from: {}", loadedLibraryPath);
+            return loadedLibraryPath;
 
         } catch (UnsatisfiedLinkError ule) { // Catch specifically from System.load()
             log.error("Failed to load native library (UnsatisfiedLinkError from System.load()): {}: {}", 
-                     (loadedLibraryPath != null ? loadedLibraryPath : "<path not determined>"), ule.getMessage(), ule);
+                     (loadedLibraryPath != null ? loadedLibraryPath : (tempLibFilePath != null ? tempLibFilePath : "<path not determined>")), 
+                     ule.getMessage(), ule);
             logLibraryPaths(); // Log paths for diagnostics
             throw ule; // Re-throw to be handled by RandomXNative's static block
         } catch (Exception e) {

@@ -34,6 +34,15 @@ import java.util.Set;
 public class Example {
 
     /**
+     * Default constructor for the Example class.
+     * This constructor is intentionally empty as this class primarily serves as a demonstration
+     * with static methods or through its main method.
+     */
+    public Example() {
+        // Default constructor
+    }
+
+    /**
      * Main method demonstrating the RandomX hashing process.
      * Shows initialization of RandomX components and hash calculation.
      *

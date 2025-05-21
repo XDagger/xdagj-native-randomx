@@ -117,7 +117,7 @@ public enum RandomXFlag {
      * Each bit in the input value corresponds to a specific flag.
      *
      * @param flags The combined integer value of multiple flags
-     * @return A set of RandomXFlag enums corresponding to the enabled bits
+     * @return A set of RandomXFlag enums corresponding to the enabled bits.
      */
     public static Set<RandomXFlag> fromValue(int flags) {
         EnumSet<RandomXFlag> result = EnumSet.noneOf(RandomXFlag.class);

@@ -33,6 +33,14 @@ import com.sun.jna.Pointer;
  * This class registers the native methods after the library is successfully loaded.
  */
 public class RandomXNative {
+    /**
+     * Private constructor to prevent instantiation.
+     * This class provides static JNA mappings and should not be instantiated.
+     */
+    private RandomXNative() {
+        throw new UnsupportedOperationException("This is a JNA mapping class and cannot be instantiated");
+    }
+
     static {
         try {
             // Step 1: Initialize the library using the loader.

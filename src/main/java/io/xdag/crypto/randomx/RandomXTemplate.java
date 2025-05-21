@@ -38,6 +38,19 @@ import java.util.*;
 @ToString
 @Slf4j
 public class RandomXTemplate implements AutoCloseable {
+    /**
+     * Private constructor to be used by the Lombok generated builder.
+     * Direct instantiation is discouraged; use the builder pattern.
+     */
+    private RandomXTemplate(boolean miningMode, Set<RandomXFlag> flags, RandomXCache cache, RandomXDataset dataset, RandomXVM vm, byte[] currentKey) {
+        this.miningMode = miningMode;
+        this.flags = flags;
+        this.cache = cache;
+        this.dataset = dataset;
+        this.vm = vm;
+        this.currentKey = currentKey;
+    }
+
     /** Flag indicating if the template is in mining mode */
     @Getter
     private final boolean miningMode;
