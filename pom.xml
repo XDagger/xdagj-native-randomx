@@ -6,7 +6,7 @@
 
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-native-randomx</artifactId>
-    <version>0.2.3</version>
+    <version>0.2.4</version>
 
     <name>xdagj-native-randomx</name>
     <description>A Java RandomX Library For XDAGJ</description>
