@@ -38,7 +38,7 @@ Support the project with XDAG donations:
 
 ### **1. Requirements**
 
-- **JDK**: v17 or later
+- **JDK**: v21 or later
 - **Maven**: v3.9.9 or later
 - **CMake**: v3.5 or later
 - **GCC/Compiler**: GCC v4.8 or later (v7+ recommended for best performance)

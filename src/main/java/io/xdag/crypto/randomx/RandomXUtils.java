@@ -34,6 +34,13 @@ import java.util.stream.Collectors;
 public final class RandomXUtils {
 
     /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private RandomXUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
+
+    /**
      * The size of a RandomX hash in bytes (usually 32 bytes).
      */
     public static final int RANDOMX_HASH_SIZE = 32;
