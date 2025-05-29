@@ -20,7 +20,7 @@ jobs:
           # Linux - x86_64
           - os: ubuntu-latest
             arch: x86_64
-            cmake_args: '-DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON -DCMAKE_C_FLAGS="-fPIC"'
+            cmake_args: '-DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_SHARED_LINKER_FLAGS="-z noexecstack"'
             artifact_name: 'librandomx_linux_x86_64.so'
             output_lib: 'librandomx_linux_x86_64.so'
           # macOS - x86_64
