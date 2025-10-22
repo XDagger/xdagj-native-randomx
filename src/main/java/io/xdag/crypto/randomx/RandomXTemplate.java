@@ -48,17 +48,26 @@ public class RandomXTemplate implements AutoCloseable {
         this.cache = cache;
         this.dataset = dataset;
         this.vm = vm;
-        this.currentKey = currentKey;
+        // Defensive copy to prevent external modification
+        this.currentKey = currentKey != null ? Arrays.copyOf(currentKey, currentKey.length) : null;
     }
 
     /** Flag indicating if the template is in mining mode */
     @Getter
     private final boolean miningMode;
-    
+
     /** Set of RandomX flags for configuring the algorithm behavior */
-    @Getter
     private final Set<RandomXFlag> flags;
-    
+
+    /**
+     * Gets the flags used to configure this RandomX template.
+     *
+     * @return An unmodifiable set of RandomX flags.
+     */
+    public Set<RandomXFlag> getFlags() {
+        return Collections.unmodifiableSet(flags);
+    }
+
     /** Cache for RandomX operations */
     @Getter
     private final RandomXCache cache;
@@ -72,8 +81,15 @@ public class RandomXTemplate implements AutoCloseable {
     private RandomXVM vm;
 
     /** Stores the current key used for cache initialization to avoid redundant re-initializations. */
-    @Getter
     private byte[] currentKey;
+
+    /**
+     * Gets a copy of the current key to prevent external modification of internal state.
+     * @return A copy of the current key, or null if no key is set.
+     */
+    public byte[] getCurrentKey() {
+        return currentKey != null ? Arrays.copyOf(currentKey, currentKey.length) : null;
+    }
 
     /**
      * Initializes the RandomX virtual machine (VM) with the configured settings.
@@ -150,23 +166,51 @@ public class RandomXTemplate implements AutoCloseable {
         // If in mining mode, the dataset also needs to be reinitialized with the new cache.
         if (miningMode) {
             log.debug("Mining mode: Reinitializing dataset due to key change.");
-            if (dataset != null) {
-                dataset.close(); // Close the old dataset
-            }
-            // Create and initialize a new dataset with the (now re-initialized) cache.
-            // The flags for the dataset should include FULL_MEM.
-            Set<RandomXFlag> datasetFlags = EnumSet.copyOf(this.flags); // Start with base flags
-            datasetFlags.add(RandomXFlag.FULL_MEM);
-            
-            dataset = new RandomXDataset(datasetFlags);
-            dataset.init(cache); // Initialize with the cache that has the new key.
-            
-            if (vm != null) {
-                log.debug("Updating VM with the new dataset.");
-                vm.setDataset(dataset); 
-            } else {
-                // This case should ideally not happen if init() is called after key setting or if builder manages initial key.
-                log.warn("VM is null during dataset reinitialization in changeKey. Dataset will be set when VM is created.");
+
+            // Create new dataset first, then close old one to avoid state inconsistency
+            RandomXDataset oldDataset = this.dataset;
+            RandomXDataset newDataset = null;
+
+            try {
+                // The flags for the dataset should include FULL_MEM.
+                Set<RandomXFlag> datasetFlags = EnumSet.copyOf(this.flags); // Start with base flags
+                datasetFlags.add(RandomXFlag.FULL_MEM);
+
+                newDataset = new RandomXDataset(datasetFlags);
+                newDataset.init(cache); // Initialize with the cache that has the new key.
+
+                // Successfully created and initialized, update reference
+                this.dataset = newDataset;
+
+                // Update VM with new dataset if VM exists
+                if (vm != null) {
+                    log.debug("Updating VM with the new dataset.");
+                    vm.setDataset(newDataset);
+                }
+
+                // Now it's safe to close the old dataset
+                if (oldDataset != null) {
+                    try {
+                        oldDataset.close();
+                        log.debug("Old dataset closed successfully.");
+                    } catch (Exception e) {
+                        log.warn("Failed to close old dataset", e);
+                        // Continue anyway since new dataset is already set
+                    }
+                }
+
+            } catch (Exception e) {
+                log.error("Failed to create/initialize new dataset during key change", e);
+                // Cleanup the new dataset if it was created
+                if (newDataset != null) {
+                    try {
+                        newDataset.close();
+                    } catch (Exception cleanupEx) {
+                        log.warn("Failed to cleanup new dataset after initialization failure", cleanupEx);
+                    }
+                }
+                // Keep old dataset if it exists (don't set this.dataset to null)
+                throw new RuntimeException("Failed to reinitialize dataset with new key", e);
             }
         } else {
             // In light mode, ensure dataset is null if it was somehow set
@@ -254,20 +298,34 @@ public class RandomXTemplate implements AutoCloseable {
      * The Cache is managed externally if passed to the builder, or internally if created by this template.
      * The Current implementation assumes cache is provided via builder and its lifecycle is managed outside this close().
      * If RandomXTemplate were to create its own RandomXCache, it should also close it here.
+     *
+     * Note: This method attempts to close all resources independently, ensuring that failure
+     * to close one resource does not prevent cleanup of others.
      */
     @Override
     public void close() {
         log.debug("Closing RandomXTemplate resources...");
+
+        // Close VM first (highest level resource)
         if (vm != null) {
-            log.debug("Closing RandomX VM...");
-            vm.close();
-            vm = null;
+            try {
+                log.debug("Closing RandomX VM...");
+                vm.close();
+            } catch (Exception e) {
+                log.error("Failed to close RandomX VM", e);
+            }
         }
+
+        // Close dataset second
         if (dataset != null) {
-            log.debug("Closing RandomX Dataset...");
-            dataset.close();
-            dataset = null;
+            try {
+                log.debug("Closing RandomX Dataset...");
+                dataset.close();
+            } catch (Exception e) {
+                log.error("Failed to close RandomX Dataset", e);
+            }
         }
+
         // currentKey does not need explicit closing.
         // Cache is not closed here as it's assumed to be managed externally (passed in via builder).
         log.info("RandomXTemplate resources closed.");
