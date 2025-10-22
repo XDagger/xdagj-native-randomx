@@ -116,7 +116,7 @@ To include `xdagj-native-randomx` in your project, add the following dependency 
 <dependency>
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-native-randomx</artifactId>
-    <version>0.2.5</version>
+    <version>0.2.6</version>
 </dependency>
 ```
 
