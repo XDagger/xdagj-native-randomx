@@ -71,6 +71,9 @@ public final class RandomXUtils {
      * returns an empty set or a set that doesn't explicitly include optimizations
      * that would imply DEFAULT.
      *
+     * On macOS ARM64 (Apple Silicon), this method automatically ensures SECURE flag
+     * is enabled when JIT is present for stability and W^X compliance.
+     *
      * @return A Set of RandomXFlag enums representing the enabled flags.
      */
     public static Set<RandomXFlag> getRecommendedFlags() {
@@ -79,6 +82,22 @@ public final class RandomXUtils {
 
         Set<RandomXFlag> flagsSet = RandomXFlag.fromValue(nativeFlagsValue);
         log.info("Parsed native flags set: {}", flagsSet.stream().map(Enum::name).collect(Collectors.joining(", ")));
+
+        // Detect platform
+        String osName = System.getProperty("os.name", "").toLowerCase();
+        String osArch = System.getProperty("os.arch", "").toLowerCase();
+        boolean isMacOSARM64 = osName.contains("mac") &&
+                               (osArch.contains("aarch64") || osArch.contains("arm64"));
+
+        // macOS ARM64 specific handling: JIT requires SECURE for W^X compliance
+        if (isMacOSARM64 && flagsSet.contains(RandomXFlag.JIT)) {
+            if (!flagsSet.contains(RandomXFlag.SECURE)) {
+                log.info("macOS ARM64 detected with JIT flag: Automatically enabling SECURE flag for W^X compliance and stability");
+                flagsSet.add(RandomXFlag.SECURE);
+            } else {
+                log.info("macOS ARM64 detected: JIT and SECURE flags already present (correct configuration)");
+            }
+        }
 
         // Ensure a DEFAULT flag is present if the set is empty or only contains non-functional flags.
         // The native library should ideally always return DEFAULT (0) or a combination including it
