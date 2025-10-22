@@ -103,6 +103,15 @@ public class RandomXNative {
     public static native void randomx_init_cache(Pointer cache, Pointer key, long keySize);
 
     /**
+     * Returns a pointer to the internal memory buffer of the cache structure.
+     * The size of the internal memory buffer is RANDOMX_ARGON_MEMORY KiB (typically 256 KiB).
+     *
+     * @param cache Pointer to an initialized RandomX cache. Must not be NULL.
+     * @return Pointer to the internal memory buffer of the cache structure.
+     */
+    public static native Pointer randomx_get_cache_memory(Pointer cache);
+
+    /**
      * Releases a RandomX cache previously allocated by {@link #randomx_alloc_cache(int)}.
      *
      * @param cache Pointer to the cache object to be released.

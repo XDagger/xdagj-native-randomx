@@ -29,6 +29,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -38,8 +39,16 @@ import java.util.Set;
 @Slf4j
 public class RandomXCache implements Closeable {
     private final Pointer cachePointer;
-    @Getter
     private final Set<RandomXFlag> flags;
+
+    /**
+     * Gets the flags used to configure this cache.
+     *
+     * @return An unmodifiable set of RandomX flags.
+     */
+    public Set<RandomXFlag> getFlags() {
+        return Collections.unmodifiableSet(flags);
+    }
 
     /**
      * Allocates a new RandomX cache.
@@ -58,7 +67,7 @@ public class RandomXCache implements Closeable {
             log.error(errorMsg);
             throw new RuntimeException(errorMsg);
         }
-        log.info("RandomX cache allocated successfully at pointer: {}", Pointer.nativeValue(this.cachePointer));
+        log.debug("RandomX cache allocated successfully at pointer: {}", Pointer.nativeValue(this.cachePointer));
     }
 
     /**
@@ -87,11 +96,11 @@ public class RandomXCache implements Closeable {
                     keyPointer,
                     key.length
             );
-            log.info("RandomX cache initialized successfully.");
+            log.debug("RandomX cache initialized successfully.");
         } catch (Exception e) {
             log.error("Failed to initialize RandomX cache", e);
-            // Even if initialization fails, attempt to release memory
-            close(); // Release cachePointer
+            // Note: We don't call close() here to avoid double-free.
+            // The caller is responsible for cleanup using try-with-resources.
             throw new RuntimeException("Failed to initialize RandomX cache", e);
         } finally {
             // Memory objects do not need to be manually released; JNA's GC will handle it,

@@ -26,6 +26,7 @@ package io.xdag.crypto.randomx;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,8 +54,16 @@ public class RandomXDataset implements AutoCloseable {
      */
     private final Pointer datasetPointer;
 
-    @Getter
     private final Set<RandomXFlag> flags; // Store flags used for allocation
+
+    /**
+     * Gets the flags used to configure this dataset.
+     *
+     * @return An unmodifiable set of RandomX flags.
+     */
+    public Set<RandomXFlag> getFlags() {
+        return Collections.unmodifiableSet(flags);
+    }
 
     /**
      * Constructs a new RandomXDataset and allocates memory for it.
@@ -79,12 +88,39 @@ public class RandomXDataset implements AutoCloseable {
             throw new RuntimeException(errorMsg); // Use RuntimeException
         }
 
-        log.info("RandomX dataset allocated successfully at pointer: {} with flags: {}", Pointer.nativeValue(datasetPointer), flags);
+        log.debug("RandomX dataset allocated successfully at pointer: {} with flags: {}", Pointer.nativeValue(datasetPointer), flags);
+    }
+
+    /**
+     * Get the optimal thread count for dataset initialization.
+     * Can be overridden via system property: randomx.dataset.threads
+     * Default is half of available processors.
+     *
+     * @return The number of threads to use for initialization.
+     */
+    private int getOptimalThreadCount() {
+        String threadsProp = System.getProperty("randomx.dataset.threads");
+        if (threadsProp != null && !threadsProp.isEmpty()) {
+            try {
+                int threads = Integer.parseInt(threadsProp);
+                if (threads > 0) {
+                    log.info("Using configured thread count from system property: {}", threads);
+                    return threads;
+                } else {
+                    log.warn("Invalid randomx.dataset.threads value (must be positive): {}, using default", threadsProp);
+                }
+            } catch (NumberFormatException e) {
+                log.warn("Invalid randomx.dataset.threads value (not a number): {}, using default", threadsProp);
+            }
+        }
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        return Math.max(1, availableProcessors / 2);
     }
 
     /**
      * Initializes the dataset using multiple threads.
      * The initialization work is divided among threads based on available CPU cores.
+     * Thread count can be configured via system property: randomx.dataset.threads
      *
      * @param cache The RandomXCache instance required for dataset initialization.
      * @throws RuntimeException if initialization is interrupted or fails.
@@ -108,8 +144,7 @@ public class RandomXDataset implements AutoCloseable {
         }
 
         // Calculate optimal thread count (using half of available processors by default)
-        int availableProcessors = Runtime.getRuntime().availableProcessors();
-        int initThreadCount = Math.max(1, availableProcessors / 2);
+        int initThreadCount = getOptimalThreadCount();
         log.info("Initializing dataset ({} items) using {} threads.", totalItems, initThreadCount);
 
         // Create thread pool with custom thread factory for naming

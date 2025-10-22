@@ -6,7 +6,7 @@
 
     <groupId>io.xdag</groupId>
     <artifactId>xdagj-native-randomx</artifactId>
-    <version>0.2.5</version>
+    <version>0.2.6</version>
 
     <name>xdagj-native-randomx</name>
     <description>A Java RandomX Library For XDAGJ</description>
@@ -26,8 +26,7 @@
         <lombok.version>1.18.38</lombok.version>
         <slf4j.version>2.0.17</slf4j.version>
         <junit.version>5.12.2</junit.version>
-        <jmh.version>1.37</jmh.version>
-        
+
         <!-- Plugin versions -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
@@ -87,7 +86,6 @@
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
                         </path>
-                        <!-- Add other annotation processors if needed -->
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
@@ -99,7 +97,6 @@
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <printSummary>true</printSummary>
-                    <argLine>--enable-preview</argLine>
                 </configuration>
             </plugin>
 
@@ -266,20 +263,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>${slf4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-core</artifactId>
-            <version>${jmh.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-generator-annprocess</artifactId>
-            <version>${jmh.version}</version>
             <scope>test</scope>
         </dependency>
 
