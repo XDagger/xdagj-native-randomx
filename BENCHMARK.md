@@ -94,23 +94,37 @@ Performance: 373.207 hashes per second
 
 ## Actual Performance Comparison
 
-On an Apple M3 Pro with JIT+SECURE+softAes:
+On an Apple M3 Pro with JIT+SECURE+softAes (average of 3 runs):
 
 | Implementation | Mode | H/s | Relative Performance | Notes |
 |----------------|------|-----|---------------------|-------|
-| C++ (native) | Mining | ~340 H/s | 100% (baseline) | Direct native execution |
-| Java (JNA) | Mining | **~371 H/s** | **109%** 🚀 | Optimized with ThreadLocal buffers |
+| C++ (native) | Mining | ~402 H/s | 100% (baseline) | Direct native execution |
+| Java (JNA) | Mining | **~369 H/s** | **92%** | Excellent JNA performance |
+| C++ (native) | Light (Verify) | ~19 H/s | 100% (baseline) | No dataset |
+| Java (JNA) | Light (Verify) | **~19 H/s** | **100%** ⚡ | Zero overhead! |
 
-### JNA Performance Success
+### JNA Performance Analysis
 
-The Java JNA implementation is **9% faster** than C++ in this test! This is achieved through:
+The Java JNA implementation delivers exceptional performance:
 
-1. **JVM JIT Optimizations**: The Java JIT compiler (Hotspot) optimizes the loop and array operations
+**Mining Mode (Full Dataset)**
+- Achieves 92% of C++ performance
+- Only 8% overhead for JNA abstraction layer
+- ~33 H/s difference (369 vs 402 H/s)
+
+**Light Mode (Cache Only)**
+- Achieves 100% of C++ performance
+- **No measurable overhead** - identical to native C++!
+- This suggests the overhead in mining mode comes from dataset access patterns, not JNA itself
+
+### Why Java Performs So Well
+
+1. **JVM JIT Optimizations**: The Java JIT compiler (Hotspot) optimizes the loop and array operations effectively
 2. **ThreadLocal Buffer Reuse**: Our optimization using ThreadLocal buffers for Memory and byte arrays
 3. **Batch Mode**: Java benefits from better instruction pipelining in batch mode
 4. **Efficient Memory Management**: Minimal allocation overhead in the hot path
 
-### Previous Performance Analysis
+### Previous Expectations vs Reality
 
 Initially, we expected Java to be 20-35% slower due to:
 
@@ -119,7 +133,11 @@ Initially, we expected Java to be 20-35% slower due to:
 3. **GC and Array Allocation** (~5-10%): Even with optimization
 4. **Additional Safety Checks** (~5%): Java's runtime checks
 
-However, our optimizations (especially ThreadLocal buffer reuse and output array caching) have largely eliminated these overhead, and combined with JVM's JIT optimization, the result is competitive or even superior performance.
+**Actual Results**: Our optimizations (ThreadLocal buffer reuse, output array caching, and batch mode) have largely eliminated these overheads:
+- **Mining mode**: Only 8% slower than C++
+- **Light mode**: **No overhead at all** - matching C++ performance exactly
+
+This demonstrates that well-optimized JNA code can achieve near-native performance, especially for compute-intensive workloads where the JVM's JIT compiler can optimize the hot paths effectively.
 
 ### Implementation Trade-offs
 

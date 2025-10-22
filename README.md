@@ -22,7 +22,7 @@ For more details, visit the [RandomX GitHub repository](https://github.com/tevad
 ## Features
 
 - **Native Integration**: Leverages RandomX's native C++ library via JNA.
-- **High Performance**: Java implementation outperforms C++ on Apple Silicon (~10% faster).
+- **High Performance**: Java implementation achieves 92% of C++ performance with only 8% overhead.
 - **Cross-Platform Support**: Works on Linux, macOS (x86_64 and aarch64), and Windows.
 - **Easy Integration**: Available as a Maven dependency for seamless use in Java projects.
 
@@ -203,16 +203,19 @@ For more details, see [BENCHMARK.md](BENCHMARK.md).
 | Test Configuration | C++ (H/s) | Java JNA (H/s) | JNA/C++ Ratio | Dataset Init Time | Notes |
 |:-------------------|:---------:|:--------------:|:-------------:|:------------------|:------|
 | **Mining Mode** | | | | | |
-| `--mine --jit --secure --softAes --init 4` | ~340 | **~371** | **109%** 🚀 | ~8s | Recommended config |
+| `--mine --jit --secure --softAes --init 4` | ~402 | **~369** | **92%** | ~8s | Recommended config |
 | `--mine --jit --secure --softAes --init 1` | ~340 | ~308 | 91% | ~32s | Single-threaded init |
-| **Light Mode** | | | | | |
-| `--jit --secure --softAes` | ~350 | ~360 | 103% | N/A | No dataset needed |
+| **Light Mode (Verify)** | | | | | |
+| `--jit --secure --softAes` | ~19 | ~19 | **100%** ⚡ | N/A | No dataset needed |
 | **Interpreter Mode** | | | | | |
 | `--mine --secure --softAes --init 4` | ~30 | ~29 | 97% | ~8s | ~12x slower than JIT |
 
 #### Key Findings
 
-1. **Java Outperforms C++ on Apple Silicon**: With 4-thread dataset initialization and optimized ThreadLocal buffers, Java JNA achieves ~9% better performance than C++ (371 H/s vs 340 H/s)
+1. **Excellent JNA Performance**:
+   - Mining mode: 92% of C++ performance (only 8% overhead)
+   - Light mode: 100% of C++ performance (no overhead!)
+   - This is exceptional for JNA-based native bindings
 
 2. **JIT is Critical**: JIT compilation provides ~12x performance improvement over interpreter mode on ARM64
 
