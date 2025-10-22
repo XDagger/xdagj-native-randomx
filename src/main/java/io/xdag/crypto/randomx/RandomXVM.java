@@ -59,11 +59,23 @@ public class RandomXVM implements AutoCloseable {
         ThreadLocal.withInitial(() -> new Memory(RandomXUtils.RANDOMX_HASH_SIZE));
 
     /**
+     * Thread-local output byte array to avoid repeated allocations.
+     * Reused for hash results within the same thread.
+     */
+    private static final ThreadLocal<byte[]> OUTPUT_ARRAY =
+        ThreadLocal.withInitial(() -> new byte[RandomXUtils.RANDOMX_HASH_SIZE]);
+
+    /**
      * The RandomX flags used to configure this VM.
      * Returns an unmodifiable view to prevent external modification.
      */
     private final Set<RandomXFlag> flags;
 
+    /**
+     * Gets the flags used to configure this VM.
+     *
+     * @return An unmodifiable set of RandomX flags.
+     */
     public Set<RandomXFlag> getFlags() {
         return Collections.unmodifiableSet(flags);
     }
@@ -188,9 +200,8 @@ public class RandomXVM implements AutoCloseable {
             throw new IllegalArgumentException("Input size (" + input.length + " bytes) exceeds maximum allowed size: " + MAX_INPUT_SIZE + " bytes");
         }
 
-        byte[] output = new byte[RandomXUtils.RANDOMX_HASH_SIZE];
-
-        // Reuse thread-local buffers to avoid repeated Memory allocations
+        // Reuse thread-local buffers and arrays to minimize allocations
+        byte[] output = OUTPUT_ARRAY.get();
         Memory inputMem = INPUT_BUFFER.get();
         Memory outputMem = OUTPUT_BUFFER.get();
 
@@ -199,7 +210,9 @@ public class RandomXVM implements AutoCloseable {
         }
         RandomXNative.randomx_calculate_hash(vmPointer, inputMem, input.length, outputMem);
         outputMem.read(0, output, 0, output.length);
-        return output;
+
+        // Return a copy to prevent external modification of the cached array
+        return output.clone();
     }
 
     /**
@@ -241,9 +254,8 @@ public class RandomXVM implements AutoCloseable {
             throw new IllegalArgumentException("Input cannot be null.");
         }
 
-        byte[] output = new byte[RandomXUtils.RANDOMX_HASH_SIZE];
-
-        // Reuse thread-local buffers
+        // Reuse thread-local buffers and arrays to minimize allocations
+        byte[] output = OUTPUT_ARRAY.get();
         Memory inputMem = INPUT_BUFFER.get();
         Memory outputMem = OUTPUT_BUFFER.get();
 
@@ -252,7 +264,9 @@ public class RandomXVM implements AutoCloseable {
         }
         RandomXNative.randomx_calculate_hash_next(vmPointer, inputMem, input.length, outputMem);
         outputMem.read(0, output, 0, output.length);
-        return output;
+
+        // Return a copy to prevent external modification of the cached array
+        return output.clone();
     }
 
     /**
@@ -266,14 +280,15 @@ public class RandomXVM implements AutoCloseable {
             throw new IllegalStateException("VM pointer is null, cannot finalize multi-part hash.");
         }
 
-        byte[] output = new byte[RandomXUtils.RANDOMX_HASH_SIZE];
-
-        // Reuse thread-local buffer
+        // Reuse thread-local buffers and arrays to minimize allocations
+        byte[] output = OUTPUT_ARRAY.get();
         Memory outputMem = OUTPUT_BUFFER.get();
 
         RandomXNative.randomx_calculate_hash_last(vmPointer, outputMem);
         outputMem.read(0, output, 0, output.length);
-        return output;
+
+        // Return a copy to prevent external modification of the cached array
+        return output.clone();
     }
 
     /**

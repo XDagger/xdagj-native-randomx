@@ -9,13 +9,13 @@ on:
     branches:
       - master
       - develop
+
 jobs:
   build-randomx:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        arch: [x86_64, amd64, aarch64]
         include:
           # Linux - x86_64
           - os: ubuntu-latest
@@ -23,33 +23,23 @@ jobs:
             cmake_args: '-DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_SHARED_LINKER_FLAGS="-z noexecstack"'
             artifact_name: 'librandomx_linux_x86_64.so'
             output_lib: 'librandomx_linux_x86_64.so'
+            source_lib: 'librandomx.so'
+
           # macOS - x86_64
-          - os: macos-latest
+          - os: macos-13  # Intel-based runner
             arch: x86_64
             cmake_args: '-DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON'
             artifact_name: 'librandomx_macos_x86_64.dylib'
             output_lib: 'librandomx_macos_x86_64.dylib'
+            source_lib: 'librandomx.dylib'
+
           # Windows - x86_64
           - os: windows-latest
             arch: x86_64
             cmake_args: '-G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON'
             artifact_name: 'librandomx_windows_x86_64.dll'
             output_lib: 'librandomx_windows_x86_64.dll'
-        exclude:
-          # Exclude unsupported combinations
-          - os: ubuntu-latest
-            arch: aarch64
-          - os: ubuntu-latest
-            arch: amd64
-          - os: macos-latest
-            arch: amd64
-          # Exclude macOS-aarch64 from GitHub Actions build
-          - os: macos-latest
-            arch: aarch64
-          - os: windows-latest
-            arch: aarch64
-          - os: windows-latest
-            arch: amd64
+            source_lib: 'randomx.dll'
 
     steps:
       - name: Checkout code
@@ -57,39 +47,59 @@ jobs:
         with:
           submodules: true
 
-      - name: Install dependencies
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            sudo apt-get update && sudo apt-get install -y cmake build-essential
-          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
-            brew install cmake
-          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
-            choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-          fi
-        shell: bash
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+          choco install mingw -y
+        shell: pwsh
 
       - name: Compile RandomX
         run: |
           cd randomx
-          mkdir build && cd build
-          
-          echo "Configuring for native compilation"
+          mkdir -p build
+          cd build
+
+          echo "Configuring RandomX for ${{ matrix.os }}"
           cmake .. ${{ matrix.cmake_args }}
-          
-          make -j4
-          mkdir -p ../../src/main/resources/native
-          
-          # Platform-specific copy commands with verification
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            cp -v librandomx.so ../../src/main/resources/native/${{ matrix.output_lib }}
-            ls -la ../../src/main/resources/native/
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            cp -v librandomx.dylib ../../src/main/resources/native/${{ matrix.output_lib }}
-            ls -la ../../src/main/resources/native/
-          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            cp -v librandomx.dll ../../src/main/resources/native/${{ matrix.output_lib }}
-            ls -la ../../src/main/resources/native/
+
+          # Build
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            cmake --build . --config Release -j 4
+          else
+            make -j4
           fi
+
+          # Create target directory
+          mkdir -p ../../src/main/resources/native
+
+          # Copy library with verification
+          echo "Looking for library: ${{ matrix.source_lib }}"
+          ls -la
+
+          if [ -f "${{ matrix.source_lib }}" ]; then
+            cp -v "${{ matrix.source_lib }}" "../../src/main/resources/native/${{ matrix.output_lib }}"
+            echo "✅ Successfully copied ${{ matrix.source_lib }} to ${{ matrix.output_lib }}"
+          else
+            echo "❌ Error: Library file ${{ matrix.source_lib }} not found!"
+            echo "Contents of build directory:"
+            ls -la
+            exit 1
+          fi
+
+          echo "Contents of native resources directory:"
+          ls -la ../../src/main/resources/native/
         shell: bash
 
       - name: Verify library file
@@ -97,17 +107,21 @@ jobs:
           echo "Verifying library file in native resources directory"
           if [ -f "src/main/resources/native/${{ matrix.output_lib }}" ]; then
             echo "✅ Library file ${{ matrix.output_lib }} exists"
+            file "src/main/resources/native/${{ matrix.output_lib }}" || true
           else
             echo "❌ Library file ${{ matrix.output_lib }} is missing"
+            echo "Contents of native directory:"
+            ls -la src/main/resources/native/
             exit 1
           fi
         shell: bash
 
-      - name: Archive artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: src/main/resources/native/${{ matrix.output_lib }}
+          if-no-files-found: error
 
   build-java:
     runs-on: ubuntu-latest
@@ -119,8 +133,18 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: src/main/resources/native/
-          merge-multiple: true
+          path: artifacts/
+
+      - name: Organize artifacts
+        run: |
+          mkdir -p src/main/resources/native/
+
+          # Move all downloaded libraries to the native directory
+          find artifacts/ -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) -exec cp -v {} src/main/resources/native/ \;
+
+          echo "Downloaded artifacts:"
+          ls -la src/main/resources/native/
+        shell: bash
 
       - name: Check for Apple Silicon Library
         run: |
@@ -134,12 +158,6 @@ jobs:
           fi
         shell: bash
 
-      - name: List downloaded artifacts
-        run: |
-          echo "Contents of native resources directory:"
-          ls -la src/main/resources/native/
-        shell: bash
-
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -148,25 +166,35 @@ jobs:
           cache: 'maven'
 
       - name: Build with Maven
-        run: mvn clean package
+        run: mvn clean package -DskipTests
 
-      - name: Upload JAR
+      - name: Run tests
+        run: mvn test
+
+      - name: Upload JAR artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: xdagj-native-randomx-jar
-          path: target/xdagj-native-randomx-*.jar
+          name: maven-artifacts
+          path: |
+            target/*.jar
+          if-no-files-found: error
 
   release:
     runs-on: ubuntu-latest
     needs: build-java
-    # Only run release job on master branch
-    if: github.ref == 'refs/heads/master'
+    # Only run release job on master branch for push events
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: write  # Needed to create releases
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install gh CLI
-        run: sudo apt-get install -y gh
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
 
       - name: Extract Version from pom.xml
         id: extract_version
@@ -175,62 +203,119 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Extracted version: $VERSION"
 
-      - name: Download JAR Artifact
+      - name: Download JAR Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: xdagj-native-randomx-jar
+          name: maven-artifacts
           path: target/
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Contents of target directory:"
+          ls -la target/
 
       - name: Find Main JAR File
         id: find_jar
         run: |
+          # Find the main JAR (not sources or javadoc)
           JAR_FILE=$(find target/ -type f -name "xdagj-native-randomx-*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
+
           if [ -z "$JAR_FILE" ]; then
-            echo "Error: No main JAR file found!"
+            echo "❌ Error: No main JAR file found!"
+            echo "Available files:"
+            find target/ -type f -name "*.jar"
             exit 1
           fi
+
           echo "Found JAR file: $JAR_FILE"
           echo "jar_file=$JAR_FILE" >> $GITHUB_ENV
-          # Also set the JAR filename without path for easier use
+
           JAR_BASENAME=$(basename "$JAR_FILE")
           echo "jar_basename=$JAR_BASENAME" >> $GITHUB_ENV
+          echo "✅ JAR file: $JAR_BASENAME"
 
       - name: Generate Release Notes
-        if: github.ref == 'refs/heads/master' # Only on master branch
         run: |
-          echo "# xdagj-native-randomx v${{ env.VERSION }}" > RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "## Changes" >> RELEASE_NOTES.md
-          echo "- Updated RandomX native libraries" >> RELEASE_NOTES.md
-          echo "- Improved build process" >> RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "## Native libraries included" >> RELEASE_NOTES.md
-          echo "- Linux: x86_64" >> RELEASE_NOTES.md
-          echo "- Windows: x86_64" >> RELEASE_NOTES.md
-          echo "- macOS: x86_64, aarch64 (Apple Silicon)" >> RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "## System requirements" >> RELEASE_NOTES.md
-          echo "- JDK 17 or later" >> RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md 
-          echo "## Known issues" >> RELEASE_NOTES.md
-          echo "- Known issues: None." >> RELEASE_NOTES.md
+          cat > RELEASE_NOTES.md << 'EOF'
+          # xdagj-native-randomx v${{ env.VERSION }}
 
-      - name: Create Release using gh CLI
-        if: github.ref == 'refs/heads/master' # Only on master branch
+          ## What's Included
+
+          This release includes the Java library with native RandomX bindings for multiple platforms.
+
+          ## Native Libraries Included
+
+          - **Linux**: x86_64
+          - **Windows**: x86_64
+          - **macOS**: x86_64 (Intel), aarch64 (Apple Silicon)
+
+          ## System Requirements
+
+          - Java 21 or later
+          - Supported operating systems:
+            - Linux (x86_64)
+            - Windows (x86_64)
+            - macOS (Intel & Apple Silicon)
+
+          ## Installation
+
+          Add to your Maven project:
+
+          ```xml
+          <dependency>
+              <groupId>io.xdag</groupId>
+              <artifactId>xdagj-native-randomx</artifactId>
+              <version>${{ env.VERSION }}</version>
+          </dependency>
+          ```
+
+          ## Performance Notes
+
+          - **macOS Apple Silicon (M1/M2/M3)**: Use JIT + SECURE flags for optimal performance (~12x speedup)
+          - All platforms support hardware AES acceleration when available
+
+          ## Known Issues
+
+          None reported for this release.
+
+          ## Documentation
+
+          See the [README](https://github.com/XDagger/xdagj-native-randomx) for usage examples and API documentation.
+          EOF
+
+      - name: Check if release exists
+        id: check_release
         run: |
-          gh release create "v${{ env.VERSION }}" --title "xdagj-native-randomx v${{ env.VERSION }}" --notes-file RELEASE_NOTES.md
+          if gh release view "v${{ env.VERSION }}" > /dev/null 2>&1; then
+            echo "release_exists=true" >> $GITHUB_ENV
+            echo "⚠️ Release v${{ env.VERSION }} already exists"
+          else
+            echo "release_exists=false" >> $GITHUB_ENV
+            echo "✅ Release v${{ env.VERSION }} does not exist yet"
+          fi
         env:
-          GH_TOKEN: ${{ github.token }} # Use the token automatically generated by GitHub
+          GH_TOKEN: ${{ github.token }}
 
-      - name: Rename output file
+      - name: Delete existing release if it exists
+        if: env.release_exists == 'true'
         run: |
-          echo "Original JAR path: ${{ env.jar_file }}"
-          cp "${{ env.jar_file }}" "target/xdagj-native-randomx.jar"
-          echo "✅ Renamed JAR file created at target/xdagj-native-randomx.jar"
-
-      - name: Upload JAR using gh CLI
-        if: github.ref == 'refs/heads/master' # Only on master branch
-        run: |
-          gh release upload "v${{ env.VERSION }}" target/xdagj-native-randomx.jar --clobber
+          echo "Deleting existing release v${{ env.VERSION }}"
+          gh release delete "v${{ env.VERSION }}" --yes --cleanup-tag
         env:
-          GH_TOKEN: ${{ github.token }} # Use the token automatically generated by GitHub
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Create Release
+        run: |
+          gh release create "v${{ env.VERSION }}" \
+            --title "xdagj-native-randomx v${{ env.VERSION }}" \
+            --notes-file RELEASE_NOTES.md \
+            "${{ env.jar_file }}#xdagj-native-randomx.jar"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Verify Release
+        run: |
+          echo "✅ Release v${{ env.VERSION }} created successfully"
+          gh release view "v${{ env.VERSION }}"
+        env:
+          GH_TOKEN: ${{ github.token }}

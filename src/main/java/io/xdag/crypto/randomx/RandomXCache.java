@@ -41,6 +41,11 @@ public class RandomXCache implements Closeable {
     private final Pointer cachePointer;
     private final Set<RandomXFlag> flags;
 
+    /**
+     * Gets the flags used to configure this cache.
+     *
+     * @return An unmodifiable set of RandomX flags.
+     */
     public Set<RandomXFlag> getFlags() {
         return Collections.unmodifiableSet(flags);
     }

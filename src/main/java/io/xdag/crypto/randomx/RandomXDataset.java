@@ -56,6 +56,11 @@ public class RandomXDataset implements AutoCloseable {
 
     private final Set<RandomXFlag> flags; // Store flags used for allocation
 
+    /**
+     * Gets the flags used to configure this dataset.
+     *
+     * @return An unmodifiable set of RandomX flags.
+     */
     public Set<RandomXFlag> getFlags() {
         return Collections.unmodifiableSet(flags);
     }

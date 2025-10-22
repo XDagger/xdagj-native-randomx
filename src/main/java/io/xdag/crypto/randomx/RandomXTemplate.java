@@ -59,6 +59,11 @@ public class RandomXTemplate implements AutoCloseable {
     /** Set of RandomX flags for configuring the algorithm behavior */
     private final Set<RandomXFlag> flags;
 
+    /**
+     * Gets the flags used to configure this RandomX template.
+     *
+     * @return An unmodifiable set of RandomX flags.
+     */
     public Set<RandomXFlag> getFlags() {
         return Collections.unmodifiableSet(flags);
     }
