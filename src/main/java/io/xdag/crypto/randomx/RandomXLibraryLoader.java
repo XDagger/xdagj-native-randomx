@@ -39,8 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 final class RandomXLibraryLoader {
 
-    private static boolean isLoaded = false;
-    private static Path loadedLibraryPath = null; // Store the path of the loaded library
+    private static volatile boolean isLoaded = false;
+    private static volatile Path loadedLibraryPath = null; // Store the path of the loaded library
 
     // Private constructor to prevent instantiation
     private RandomXLibraryLoader() {}

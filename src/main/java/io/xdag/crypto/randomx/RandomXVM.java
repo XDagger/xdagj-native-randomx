@@ -44,6 +44,21 @@ public class RandomXVM implements AutoCloseable {
     private static final int MAX_INPUT_SIZE = 1024 * 1024;
 
     /**
+     * Thread-local buffer for input data to avoid repeated Memory allocations.
+     * Reusing Memory objects significantly reduces GC pressure and native memory allocation overhead
+     * in high-frequency hashing scenarios (e.g., mining).
+     */
+    private static final ThreadLocal<Memory> INPUT_BUFFER =
+        ThreadLocal.withInitial(() -> new Memory(MAX_INPUT_SIZE));
+
+    /**
+     * Thread-local buffer for output data (32 bytes for RandomX hash).
+     * Reused across multiple hash calculations within the same thread.
+     */
+    private static final ThreadLocal<Memory> OUTPUT_BUFFER =
+        ThreadLocal.withInitial(() -> new Memory(RandomXUtils.RANDOMX_HASH_SIZE));
+
+    /**
      * The RandomX flags used to configure this VM.
      * Returns an unmodifiable view to prevent external modification.
      */
@@ -173,18 +188,18 @@ public class RandomXVM implements AutoCloseable {
             throw new IllegalArgumentException("Input size (" + input.length + " bytes) exceeds maximum allowed size: " + MAX_INPUT_SIZE + " bytes");
         }
 
-        byte[] output = new byte[32]; // RandomX hash is always 32 bytes
+        byte[] output = new byte[RandomXUtils.RANDOMX_HASH_SIZE];
 
-        // JNA Memory objects automatically manage native memory allocation and deallocation
-        // (at the end of their scope or during GC).
-        Memory inputMem = new Memory(input.length > 0 ? input.length : 1); // JNA Memory does not accept size 0
-        Memory outputMem = new Memory(output.length);
-      if (input.length > 0) {
-          inputMem.write(0, input, 0, input.length);
-      }
-      RandomXNative.randomx_calculate_hash(vmPointer, inputMem, input.length, outputMem);
-      outputMem.read(0, output, 0, output.length);
-      return output;
+        // Reuse thread-local buffers to avoid repeated Memory allocations
+        Memory inputMem = INPUT_BUFFER.get();
+        Memory outputMem = OUTPUT_BUFFER.get();
+
+        if (input.length > 0) {
+            inputMem.write(0, input, 0, input.length);
+        }
+        RandomXNative.randomx_calculate_hash(vmPointer, inputMem, input.length, outputMem);
+        outputMem.read(0, output, 0, output.length);
+        return output;
     }
 
     /**
@@ -201,11 +216,13 @@ public class RandomXVM implements AutoCloseable {
         if (input == null) {
             throw new IllegalArgumentException("Input cannot be null.");
         }
-        Memory inputMem = new Memory(input.length > 0 ? input.length : 1);
-      if (input.length > 0) {
-         inputMem.write(0, input, 0, input.length);
-     }
-      RandomXNative.randomx_calculate_hash_first(vmPointer, inputMem, input.length);
+
+        // Reuse thread-local buffer
+        Memory inputMem = INPUT_BUFFER.get();
+        if (input.length > 0) {
+            inputMem.write(0, input, 0, input.length);
+        }
+        RandomXNative.randomx_calculate_hash_first(vmPointer, inputMem, input.length);
     }
 
     /**
@@ -223,15 +240,19 @@ public class RandomXVM implements AutoCloseable {
         if (input == null) {
             throw new IllegalArgumentException("Input cannot be null.");
         }
-        byte[] output = new byte[32];
-        Memory inputMem = new Memory(input.length > 0 ? input.length : 1);
-        Memory outputMem = new Memory(output.length);
-      if (input.length > 0) {
-          inputMem.write(0, input, 0, input.length);
-      }
-      RandomXNative.randomx_calculate_hash_next(vmPointer, inputMem, input.length, outputMem);
-      outputMem.read(0, output, 0, output.length);
-      return output;
+
+        byte[] output = new byte[RandomXUtils.RANDOMX_HASH_SIZE];
+
+        // Reuse thread-local buffers
+        Memory inputMem = INPUT_BUFFER.get();
+        Memory outputMem = OUTPUT_BUFFER.get();
+
+        if (input.length > 0) {
+            inputMem.write(0, input, 0, input.length);
+        }
+        RandomXNative.randomx_calculate_hash_next(vmPointer, inputMem, input.length, outputMem);
+        outputMem.read(0, output, 0, output.length);
+        return output;
     }
 
     /**
@@ -244,11 +265,15 @@ public class RandomXVM implements AutoCloseable {
         if (vmPointer == null) {
             throw new IllegalStateException("VM pointer is null, cannot finalize multi-part hash.");
         }
-        byte[] output = new byte[32];
-        Memory outputMem = new Memory(output.length);
-      RandomXNative.randomx_calculate_hash_last(vmPointer, outputMem);
-      outputMem.read(0, output, 0, output.length);
-      return output;
+
+        byte[] output = new byte[RandomXUtils.RANDOMX_HASH_SIZE];
+
+        // Reuse thread-local buffer
+        Memory outputMem = OUTPUT_BUFFER.get();
+
+        RandomXNative.randomx_calculate_hash_last(vmPointer, outputMem);
+        outputMem.read(0, output, 0, output.length);
+        return output;
     }
 
     /**
@@ -275,21 +300,25 @@ public class RandomXVM implements AutoCloseable {
         }
 
         byte[] commitmentOutput = new byte[RandomXUtils.RANDOMX_HASH_SIZE];
-        Memory originalInputMem = new Memory(originalInput.length > 0 ? originalInput.length : 1); // JNA requires non-zero size for empty inputs
-        Memory preCalculatedHashMem = new Memory(preCalculatedHash.length);
-        Memory commitmentOutputMem = new Memory(commitmentOutput.length);
 
-      if (originalInput.length > 0) {
-          originalInputMem.write(0, originalInput, 0, originalInput.length);
-      }
-      // preCalculatedHash is guaranteed to be non-null and 32 bytes here
-      preCalculatedHashMem.write(0, preCalculatedHash, 0, preCalculatedHash.length);
+        // Reuse thread-local buffers where possible
+        Memory originalInputMem = INPUT_BUFFER.get();
+        Memory outputMem = OUTPUT_BUFFER.get();
 
-      // Call the native method with parameters matching the C API
-      // (Pointer input, long inputSize, Pointer hash_in, Pointer com_out)
-      RandomXNative.randomx_calculate_commitment(originalInputMem, originalInput.length, preCalculatedHashMem, commitmentOutputMem);
-      commitmentOutputMem.read(0, commitmentOutput, 0, commitmentOutput.length);
-      return commitmentOutput;
+        // For preCalculatedHash, we need a separate fixed-size Memory object
+        // since it's always 32 bytes and we can't reuse INPUT_BUFFER
+        Memory preCalculatedHashMem = new Memory(RandomXUtils.RANDOMX_HASH_SIZE);
+
+        if (originalInput.length > 0) {
+            originalInputMem.write(0, originalInput, 0, originalInput.length);
+        }
+        preCalculatedHashMem.write(0, preCalculatedHash, 0, preCalculatedHash.length);
+
+        // Call the native method with parameters matching the C API
+        // (Pointer input, long inputSize, Pointer hash_in, Pointer com_out)
+        RandomXNative.randomx_calculate_commitment(originalInputMem, originalInput.length, preCalculatedHashMem, outputMem);
+        outputMem.read(0, commitmentOutput, 0, commitmentOutput.length);
+        return commitmentOutput;
     }
 
     /**

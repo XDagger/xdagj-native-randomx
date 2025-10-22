@@ -94,8 +94,8 @@ public class RandomXCache implements Closeable {
             log.info("RandomX cache initialized successfully.");
         } catch (Exception e) {
             log.error("Failed to initialize RandomX cache", e);
-            // Even if initialization fails, attempt to release memory
-            close(); // Release cachePointer
+            // Note: We don't call close() here to avoid double-free.
+            // The caller is responsible for cleanup using try-with-resources.
             throw new RuntimeException("Failed to initialize RandomX cache", e);
         } finally {
             // Memory objects do not need to be manually released; JNA's GC will handle it,
