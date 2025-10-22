@@ -62,7 +62,7 @@ public class RandomXCache implements Closeable {
             log.error(errorMsg);
             throw new RuntimeException(errorMsg);
         }
-        log.info("RandomX cache allocated successfully at pointer: {}", Pointer.nativeValue(this.cachePointer));
+        log.debug("RandomX cache allocated successfully at pointer: {}", Pointer.nativeValue(this.cachePointer));
     }
 
     /**
@@ -91,7 +91,7 @@ public class RandomXCache implements Closeable {
                     keyPointer,
                     key.length
             );
-            log.info("RandomX cache initialized successfully.");
+            log.debug("RandomX cache initialized successfully.");
         } catch (Exception e) {
             log.error("Failed to initialize RandomX cache", e);
             // Note: We don't call close() here to avoid double-free.

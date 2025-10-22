@@ -83,7 +83,7 @@ public class RandomXDataset implements AutoCloseable {
             throw new RuntimeException(errorMsg); // Use RuntimeException
         }
 
-        log.info("RandomX dataset allocated successfully at pointer: {} with flags: {}", Pointer.nativeValue(datasetPointer), flags);
+        log.debug("RandomX dataset allocated successfully at pointer: {} with flags: {}", Pointer.nativeValue(datasetPointer), flags);
     }
 
     /**

@@ -126,7 +126,7 @@ public class RandomXVM implements AutoCloseable {
             throw new RuntimeException(errorMsg);
         }
 
-        log.info("RandomX VM created successfully. Pointer: {}, Flags: {}", Pointer.nativeValue(vmPointer), flags);
+        log.debug("RandomX VM created successfully. Pointer: {}, Flags: {}", Pointer.nativeValue(vmPointer), flags);
     }
 
     /**
