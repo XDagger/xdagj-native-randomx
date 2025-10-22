@@ -39,7 +39,7 @@ jobs:
             cmake_args: '-G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON'
             artifact_name: 'librandomx_windows_x86_64.dll'
             output_lib: 'librandomx_windows_x86_64.dll'
-            source_lib: 'randomx.dll'
+            source_lib: 'librandomx.dll'
 
     steps:
       - name: Checkout code

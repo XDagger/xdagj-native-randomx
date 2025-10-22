@@ -98,7 +98,7 @@ cd randomx
 mkdir build && cd build
 cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DARCH=native -DBUILD_SHARED_LIBS=ON
 make -j4
-cp -i randomx.dll ../../src/main/resources/native/librandomx_windows_x86_64.dll
+cp -i librandomx.dll ../../src/main/resources/native/librandomx_windows_x86_64.dll
 ```
 You can also compile using Visual Studio, as the official RandomX repository provides solution files.
 
