@@ -28,6 +28,7 @@ import com.sun.jna.Pointer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -37,10 +38,20 @@ import java.util.Set;
 @Slf4j
 public class RandomXVM implements AutoCloseable {
     /**
-     * The RandomX flags used to configure this VM.
+     * Maximum allowed input size for hash calculation (1MB).
+     * This prevents potential DoS attacks via extremely large inputs.
      */
-    @Getter
+    private static final int MAX_INPUT_SIZE = 1024 * 1024;
+
+    /**
+     * The RandomX flags used to configure this VM.
+     * Returns an unmodifiable view to prevent external modification.
+     */
     private final Set<RandomXFlag> flags;
+
+    public Set<RandomXFlag> getFlags() {
+        return Collections.unmodifiableSet(flags);
+    }
 
     /**
      * Pointer to the native VM instance.
@@ -148,7 +159,7 @@ public class RandomXVM implements AutoCloseable {
      *
      * @param input The input data to be hashed.
      * @return A 32-byte array containing the calculated hash.
-     * @throws IllegalArgumentException if input is null.
+     * @throws IllegalArgumentException if input is null or exceeds maximum size.
      * @throws IllegalStateException if the VM pointer is null.
      */
     public byte[] calculateHash(byte[] input) {
@@ -158,6 +169,10 @@ public class RandomXVM implements AutoCloseable {
         if (input == null) {
             throw new IllegalArgumentException("Input cannot be null.");
         }
+        if (input.length > MAX_INPUT_SIZE) {
+            throw new IllegalArgumentException("Input size (" + input.length + " bytes) exceeds maximum allowed size: " + MAX_INPUT_SIZE + " bytes");
+        }
+
         byte[] output = new byte[32]; // RandomX hash is always 32 bytes
 
         // JNA Memory objects automatically manage native memory allocation and deallocation

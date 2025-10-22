@@ -29,6 +29,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -38,8 +39,11 @@ import java.util.Set;
 @Slf4j
 public class RandomXCache implements Closeable {
     private final Pointer cachePointer;
-    @Getter
     private final Set<RandomXFlag> flags;
+
+    public Set<RandomXFlag> getFlags() {
+        return Collections.unmodifiableSet(flags);
+    }
 
     /**
      * Allocates a new RandomX cache.

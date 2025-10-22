@@ -48,17 +48,21 @@ public class RandomXTemplate implements AutoCloseable {
         this.cache = cache;
         this.dataset = dataset;
         this.vm = vm;
-        this.currentKey = currentKey;
+        // Defensive copy to prevent external modification
+        this.currentKey = currentKey != null ? Arrays.copyOf(currentKey, currentKey.length) : null;
     }
 
     /** Flag indicating if the template is in mining mode */
     @Getter
     private final boolean miningMode;
-    
+
     /** Set of RandomX flags for configuring the algorithm behavior */
-    @Getter
     private final Set<RandomXFlag> flags;
-    
+
+    public Set<RandomXFlag> getFlags() {
+        return Collections.unmodifiableSet(flags);
+    }
+
     /** Cache for RandomX operations */
     @Getter
     private final RandomXCache cache;
@@ -254,20 +258,34 @@ public class RandomXTemplate implements AutoCloseable {
      * The Cache is managed externally if passed to the builder, or internally if created by this template.
      * The Current implementation assumes cache is provided via builder and its lifecycle is managed outside this close().
      * If RandomXTemplate were to create its own RandomXCache, it should also close it here.
+     *
+     * Note: This method attempts to close all resources independently, ensuring that failure
+     * to close one resource does not prevent cleanup of others.
      */
     @Override
     public void close() {
         log.debug("Closing RandomXTemplate resources...");
+
+        // Close VM first (highest level resource)
         if (vm != null) {
-            log.debug("Closing RandomX VM...");
-            vm.close();
-            vm = null;
+            try {
+                log.debug("Closing RandomX VM...");
+                vm.close();
+            } catch (Exception e) {
+                log.error("Failed to close RandomX VM", e);
+            }
         }
+
+        // Close dataset second
         if (dataset != null) {
-            log.debug("Closing RandomX Dataset...");
-            dataset.close();
-            dataset = null;
+            try {
+                log.debug("Closing RandomX Dataset...");
+                dataset.close();
+            } catch (Exception e) {
+                log.error("Failed to close RandomX Dataset", e);
+            }
         }
+
         // currentKey does not need explicit closing.
         // Cache is not closed here as it's assumed to be managed externally (passed in via builder).
         log.info("RandomXTemplate resources closed.");

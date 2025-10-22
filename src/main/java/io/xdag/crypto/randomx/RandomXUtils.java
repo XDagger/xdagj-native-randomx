@@ -23,14 +23,16 @@
  */
 package io.xdag.crypto.randomx;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Set;
-// No SystemUtils or StringUtils needed if we remove platform-specific logic
 import java.util.stream.Collectors;
 
 /**
  * Utility class for RandomX constants and helper methods.
  * This class provides static methods to get RandomX flags.
  */
+@Slf4j
 public final class RandomXUtils {
 
     /**
@@ -45,11 +47,6 @@ public final class RandomXUtils {
      */
     public static final int RANDOMX_HASH_SIZE = 32;
 
-    // Use System.out for basic logging to avoid SLF4J dependency for this utility class
-    private static void logInfo(String message) {
-        System.out.println("[INFO] RandomXUtils: " + message);
-    }
-
     /**
      * Gets the recommended RandomX flags from the native library.
      *
@@ -62,8 +59,7 @@ public final class RandomXUtils {
         } catch (ClassNotFoundException e) {
              throw new RuntimeException("RandomXNative class not found", e);
         } catch (ExceptionInInitializerError e) {
-            System.err.println("ERROR in RandomXUtils: Failed to initialize RandomXNative: " + e.getCause().getMessage());
-            e.getCause().printStackTrace();
+            log.error("Failed to initialize RandomXNative: {}", e.getCause().getMessage(), e.getCause());
             throw e; // Re-throw to indicate failure
         }
         return RandomXNative.randomx_get_flags();
@@ -79,10 +75,10 @@ public final class RandomXUtils {
      */
     public static Set<RandomXFlag> getRecommendedFlags() {
         int nativeFlagsValue = getNativeFlags();
-        logInfo("Native recommended flags value: " + nativeFlagsValue);
-        
+        log.info("Native recommended flags value: {}", nativeFlagsValue);
+
         Set<RandomXFlag> flagsSet = RandomXFlag.fromValue(nativeFlagsValue);
-        logInfo("Parsed native flags set: " + flagsSet.stream().map(Enum::name).collect(Collectors.joining(", ")));
+        log.info("Parsed native flags set: {}", flagsSet.stream().map(Enum::name).collect(Collectors.joining(", ")));
 
         // Ensure a DEFAULT flag is present if the set is empty or only contains non-functional flags.
         // The native library should ideally always return DEFAULT (0) or a combination including it
@@ -90,19 +86,19 @@ public final class RandomXUtils {
         // If JIT or other major flags are set, DEFAULT (0) might be implicitly part of the mode.
         // Let's ensure the set isn't empty and contains DEFAULT if no major operational flags are present.
         if (flagsSet.isEmpty()) {
-            logInfo("Native flags resulted in an empty set. Adding DEFAULT.");
+            log.info("Native flags resulted in an empty set. Adding DEFAULT.");
             flagsSet.add(RandomXFlag.DEFAULT);
-        } else if (!flagsSet.contains(RandomXFlag.DEFAULT) && 
-                   flagsSet.stream().noneMatch(flag -> 
-                       flag == RandomXFlag.JIT || 
-                       flag == RandomXFlag.FULL_MEM || 
+        } else if (!flagsSet.contains(RandomXFlag.DEFAULT) &&
+                   flagsSet.stream().noneMatch(flag ->
+                       flag == RandomXFlag.JIT ||
+                       flag == RandomXFlag.FULL_MEM ||
                        flag == RandomXFlag.LARGE_PAGES)) {
             // If no major operational flags are set, and DEFAULT is also missing, add DEFAULT.
-            logInfo("No major operational flags (JIT, FULL_MEM, LARGE_PAGES) or DEFAULT found. Adding DEFAULT.");
+            log.info("No major operational flags (JIT, FULL_MEM, LARGE_PAGES) or DEFAULT found. Adding DEFAULT.");
             flagsSet.add(RandomXFlag.DEFAULT);
-        } 
+        }
 
-        logInfo("Final recommended flags set: " + flagsSet.stream().map(Enum::name).collect(Collectors.joining(", ")));
+        log.info("Final recommended flags set: {}", flagsSet.stream().map(Enum::name).collect(Collectors.joining(", ")));
         return flagsSet;
     }
 }
