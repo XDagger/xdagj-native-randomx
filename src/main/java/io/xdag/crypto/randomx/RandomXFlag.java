@@ -116,16 +116,28 @@ public enum RandomXFlag {
      * Converts an integer value into a set of corresponding RandomXFlags.
      * Each bit in the input value corresponds to a specific flag.
      *
+     * Note: This method handles the DEFAULT(0) flag specially since it has value 0.
+     * For composite flags like ARGON2(96), individual component flags will also be included.
+     *
      * @param flags The combined integer value of multiple flags
      * @return A set of RandomXFlag enums corresponding to the enabled bits.
      */
     public static Set<RandomXFlag> fromValue(int flags) {
         EnumSet<RandomXFlag> result = EnumSet.noneOf(RandomXFlag.class);
+
+        // Special handling for DEFAULT(0) - only add if flags value is exactly 0
+        if (flags == 0) {
+            result.add(DEFAULT);
+            return result;
+        }
+
+        // Check all other flags
         for (RandomXFlag flag : values()) {
-            if ((flags & flag.value) == flag.value) {
+            if (flag != DEFAULT && (flags & flag.value) == flag.value && flag.value != 0) {
                 result.add(flag);
             }
         }
+
         return result;
     }
 
